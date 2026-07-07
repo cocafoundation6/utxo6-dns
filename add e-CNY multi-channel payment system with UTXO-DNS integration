@@ -1,0 +1,1812 @@
+```markdown
+packages/
+
+├── core/
+
+│ ├── compliance-router/
+
+│ │ ├── RegionRouter.ts
+
+│ │ └── HKDAPComplianceRouter.ts
+
+│ ├── iso20022/
+
+│ │ ├── extensions.ts
+
+│ │ └── ECNYHKDAPAdapter.ts
+
+│ ├── journal/
+
+│ │ └── JournalService.ts
+
+│ └── utxo-dns/
+
+│ └── Resolver.ts
+
+├── cnh-routing/
+
+│ └── src/
+
+│ └── CNHRouter.ts
+
+├── inbound-adapter/
+
+│ └── src/
+
+│ └── HardwareWalletAdapter.ts
+
+├── domestic-receipt/
+
+│ └── src/
+
+│ └── ReceiptService.ts
+
+├── eudi-wallet/
+
+│ └── src/
+
+│ └── EUDIWalletAdapter.ts
+
+├── vlei-verifier/
+
+│ └── src/
+
+│ └── VLEIVerifier.ts
+
+├── multi-chain-gateway/
+
+│ └── src/
+
+│ ├── USDCGateway.ts
+
+│ ├── USDTGateway.ts
+
+│ └── HKDAPGateway.ts
+
+├── hk-coca-dex/
+
+│ └── contracts/
+
+│ └── HKCoCaDEX.sol
+
+├── examples/
+
+│ └── qr-payment/
+
+│ └── demo.ts
+
+├── tests/
+
+│ └── integration/
+
+│ ├── compliance-router.spec.ts
+
+│ ├── cnh-routing.spec.ts
+
+│ ├── eudi-adapter.spec.ts
+
+│ └── hkdap-gateway.spec.ts
+
+├── package.json
+
+├── tsconfig.json
+
+├── README.md
+
+└── CONTRIBUTING.md
+
+---
+
+## 1. Core Package: Compliance Router + ISO 20022 + Journal
+
+### 1.1 RegionComplianceRouter -- Regional Compliance Router
+
+```typescript
+// packages/core/compliance-router/RegionRouter.ts
+// Author: J. Tian (uw2icg-core)
+
+export interface UserTier {
+  userId: string;
+  region: 'MAINLAND' | 'OVERSEAS_TOURIST' | 'HK_LICENSED' | 'INBOUND_TOURIST';
+  kycLevel: 1 | 2 | 3;
+  yearlyOutboundLimit: number;
+  yearlyUsed: number;
+}
+
+export interface PaymentRequest {
+  userId: string;
+  amount: number;
+  currency: string;
+  targetCurrency?: string;
+  merchantId?: string;
+  qrPayload?: string;
+  scenario?: 'DOMESTIC' | 'OVERSEAS_TOURISM' | 'INBOUND_PAYMENT' | 'RWA_CONVERSION';
+  sourceAccount?: string;
+}
+
+export interface RouteResult {
+  allowed: boolean;
+  action: 'PAYMENT_VIA_ECNY' | 'CNH_SMART_SETTLEMENT' | 'RWA_CONVERSION' | 'INBOUND_HARDWARE_WALLET' | 'REJECTED';
+  note: string;
+  codePath: string;
+  quote?: RouteQuote;
+  reason?: string;
+}
+
+export interface RouteQuote {
+  provider: string;
+  exchangeRate: number;
+  fee: number;
+  settlementTime: string;
+  savingsVsAirport?: number;
+}
+
+export class RegionComplianceRouter {
+  private userRegistry: Map<string, UserTier> = new Map();
+  private cnhRouter: CNHSmartRouter;
+  private vleiVerifier: VLEIVerifier;
+
+  constructor() {
+    this.cnhRouter = new CNHSmartRouter();
+    this.vleiVerifier = new VLEIVerifier();
+  }
+
+  async getUserTier(userId: string): Promise<UserTier> {
+    const user = this.userRegistry.get(userId);
+    if (!user) throw new Error(`User ${userId} not found`);
+    return user;
+  }
+
+  async routePayment(request: PaymentRequest): Promise<RouteResult> {
+    const tier = await this.getUserTier(request.userId);
+
+    // ZONE 1: MAINLAND -- e-CNY direct payment only
+    if (tier.region === 'MAINLAND') {
+      return {
+        allowed: true,
+        action: 'PAYMENT_VIA_ECNY',
+        note: 'Strictly e-CNY direct payment. Crypto conversion prohibited under 42号通知.',
+        codePath: 'packages/domestic-receipt'
+      };
+    }
+
+    // ZONE 2: OVERSEAS TOURISM -- CNH smart routing (no crypto)
+    if (tier.region === 'OVERSEAS_TOURIST' && request.scenario === 'OVERSEAS_TOURISM') {
+      const limitRemaining = tier.yearlyOutboundLimit - tier.yearlyUsed;
+      if (request.amount > limitRemaining) {
+        return {
+          allowed: false,
+          action: 'REJECTED',
+          note: 'Yearly outbound limit exceeded. Please use other payment methods.',
+          codePath: '',
+          reason: `Limit remaining: ${limitRemaining}, Requested: ${request.amount}`
+        };
+      }
+      const quote = await this.cnhRouter.getOptimalRoute(request.amount, request.targetCurrency || 'USD');
+      return {
+        allowed: true,
+        action: 'CNH_SMART_SETTLEMENT',
+        note: 'Settled via offshore CNH from HK licensed banks. No stablecoin involved.',
+        codePath: 'packages/cnh-routing',
+        quote
+      };
+    }
+
+    // ZONE 3: HONG KONG LICENSED -- RWA conversion (isolated)
+    if (tier.region === 'HK_LICENSED' && tier.kycLevel >= 3) {
+      const vleiStatus = await this.vleiVerifier.verify(request.merchantId || '');
+      if (!vleiStatus.valid) {
+        return {
+          allowed: false,
+          action: 'REJECTED',
+          note: 'vLEI verification failed. Entity not active or sanctioned.',
+          codePath: '',
+          reason: `vLEI status: ${vleiStatus.status}`
+        };
+      }
+      return {
+        allowed: true,
+        action: 'RWA_CONVERSION',
+        note: 'HK licensed entities only. Data physically isolated from mainland nodes.',
+        codePath: 'packages/hk-coca-dex'
+      };
+    }
+
+    // ZONE 4: INBOUND FOREIGN TOURISTS -- hardware wallet or bound card only
+    if (tier.region === 'INBOUND_TOURIST') {
+      if (request.sourceAccount && this.isCryptoAddress(request.sourceAccount)) {
+        return {
+          allowed: false,
+          action: 'REJECTED',
+          note: 'Crypto assets not accepted for inbound payments under 42号通知.',
+          codePath: '',
+          reason: 'Source account appears to be a crypto address (0x... or bc1...).'
+        };
+      }
+      return {
+        allowed: true,
+        action: 'INBOUND_HARDWARE_WALLET',
+        note: 'Use official e-CNY hardware wallet or bound international card (Visa/Mastercard).',
+        codePath: 'packages/inbound-adapter'
+      };
+    }
+
+    return {
+      allowed: false,
+      action: 'REJECTED',
+      note: 'Unsupported region or compliance level.',
+      codePath: '',
+      reason: `Region: ${tier.region}, KYC: ${tier.kycLevel}`
+    };
+  }
+
+  private isCryptoAddress(address: string): boolean {
+    if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
+    if (/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,90}$/.test(address)) return true;
+    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) return true;
+    return false;
+  }
+
+  async registerUser(user: UserTier): Promise<void> {
+    this.userRegistry.set(user.userId, user);
+  }
+}
+```
+
+---
+
+### 1.2 ISO 20022 Extensions -- ISO 20022 + .utxo Integration
+
+```typescript
+// packages/core/iso20022/extensions.ts
+// Author: J. Tian (uw2icg-core)
+
+export interface ISO20022Extension {
+  ultimateDebtor: {
+    name: string;
+    id: { scheme: 'UTXO' | 'LEI' | 'BIC'; value: string };
+    postalAddress?: { country: string; city: string; postalCode: string; street: string };
+  };
+  ultimateCreditor: {
+    name: string;
+    id: { scheme: 'UTXO' | 'LEI' | 'BIC'; value: string };
+    postalAddress?: { country: string; city: string; postalCode: string; street: string };
+  };
+  currency: {
+    code: 'EUR' | 'CNY' | 'CNH' | 'USD' | 'HKD';
+    utxoWalletId?: string;
+  };
+  purpose: 'GOODS_SERVICES' | 'TOURISM' | 'REMITTANCE' | 'INVESTMENT';
+}
+
+export interface ISO20022PaymentInstruction {
+  messageId: string;
+  creationDateTime: Date;
+  numberOfTransactions: number;
+  settlementInformation: {
+    settlementMethod: 'INDA' | 'INGA' | 'COVE';
+    clearingChannel: 'RTGS' | 'ACH' | 'CBDC';
+    currency: string;
+  };
+  paymentInfo: Array<{
+    paymentId: string;
+    paymentMethod: 'TRF' | 'CHK' | 'DD';
+    amount: { instructedAmount: number; currency: string };
+    exchangeRate?: number;
+    chargeBearer: 'DEBT' | 'CRED' | 'SHAR' | 'SLEV';
+    ultimateDebtor: ISO20022Extension['ultimateDebtor'];
+    ultimateCreditor: ISO20022Extension['ultimateCreditor'];
+    purpose: ISO20022Extension['purpose'];
+    regulatoryReporting: Array<{ regulatoryAuthority: string; reportingCode: string; amount: number }>;
+  }>;
+}
+
+export class ISO20022PaymentBuilder {
+  private message: ISO20022PaymentInstruction;
+
+  constructor() {
+    this.message = {
+      messageId: this.generateMessageId(),
+      creationDateTime: new Date(),
+      numberOfTransactions: 1,
+      settlementInformation: {
+        settlementMethod: 'INDA',
+        clearingChannel: 'CBDC',
+        currency: 'CNY'
+      },
+      paymentInfo: []
+    };
+  }
+
+  private generateMessageId(): string {
+    return `MSG${Date.now()}${Math.floor(Math.random() * 10000)}`;
+  }
+
+  setCurrency(code: 'EUR' | 'CNY' | 'CNH' | 'USD' | 'HKD', utxoWalletId?: string): this {
+    this.message.settlementInformation.currency = code;
+    return this;
+  }
+
+  addPaymentInfo(info: {
+    amount: number;
+    currency: string;
+    debtor: ISO20022Extension['ultimateDebtor'];
+    creditor: ISO20022Extension['ultimateCreditor'];
+    purpose: ISO20022Extension['purpose'];
+  }): this {
+    this.message.paymentInfo.push({
+      paymentId: `PAY${Date.now()}${Math.floor(Math.random() * 1000)}`,
+      paymentMethod: 'TRF',
+      amount: { instructedAmount: info.amount, currency: info.currency },
+      chargeBearer: 'DEBT',
+      ultimateDebtor: info.debtor,
+      ultimateCreditor: info.creditor,
+      purpose: info.purpose,
+      regulatoryReporting: this.buildRegulatoryReporting(info)
+    });
+    return this;
+  }
+
+  private buildRegulatoryReporting(info: { amount: number; currency: string }):
+    ISO20022PaymentInstruction['paymentInfo'][0]['regulatoryReporting'] {
+    if (info.currency !== 'CNY') {
+      return [{ regulatoryAuthority: 'SAFE', reportingCode: 'CROSS_BORDER', amount: info.amount }];
+    }
+    return [];
+  }
+
+  build(): ISO20022PaymentInstruction {
+    return this.message;
+  }
+
+  toXML(): string {
+    return this.generateXMLFromMessage(this.message);
+  }
+
+  private generateXMLFromMessage(msg: ISO20022PaymentInstruction): string {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.12">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>${msg.messageId}</MsgId>
+      <CreDtTm>${msg.creationDateTime.toISOString()}</CreDtTm>
+      <NbOfTxs>${msg.numberOfTransactions}</NbOfTxs>
+      <SttlmInf>
+        <SttlmMtd>${msg.settlementInformation.settlementMethod}</SttlmMtd>
+        <ClrChan>${msg.settlementInformation.clearingChannel}</ClrChan>
+      </SttlmInf>
+    </GrpHdr>
+    ${msg.paymentInfo.map(p => this.generatePaymentInfoXML(p)).join('')}
+  </FIToFICstmrCdtTrf>
+</Document>`;
+  }
+
+  private generatePaymentInfoXML(p: ISO20022PaymentInstruction['paymentInfo'][0]): string {
+    return `
+  <CdtTrfTxInf>
+    <PmtId>
+      <InstrId>${p.paymentId}</InstrId>
+      <EndToEndId>${p.paymentId}</EndToEndId>
+    </PmtId>
+    <PmtTpInf>
+      <CtgyPurp>
+        <Cd>${p.purpose === 'TOURISM' ? 'TOUR' : p.purpose === 'GOODS_SERVICES' ? 'GDDS' : 'REMT'}</Cd>
+      </CtgyPurp>
+    </PmtTpInf>
+    <Amt>
+      <InstdAmt Ccy="${p.amount.currency}">${p.amount.instructedAmount.toFixed(2)}</InstdAmt>
+    </Amt>
+    <UltmtDbtr>
+      <Nm>${p.ultimateDebtor.name}</Nm>
+      <Id>
+        <OrgId>
+          <Othr>
+            <Id>${p.ultimateDebtor.id.value}</Id>
+            <SchmeNm><Cd>${p.ultimateDebtor.id.scheme}</Cd></SchmeNm>
+          </Othr>
+        </OrgId>
+      </Id>
+    </UltmtDbtr>
+    <UltmtCdtr>
+      <Nm>${p.ultimateCreditor.name}</Nm>
+      <Id>
+        <OrgId>
+          <Othr>
+            <Id>${p.ultimateCreditor.id.value}</Id>
+            <SchmeNm><Cd>${p.ultimateCreditor.id.scheme}</Cd></SchmeNm>
+          </Othr>
+        </OrgId>
+      </Id>
+    </UltmtCdtr>
+  </CdtTrfTxInf>`;
+  }
+}
+```
+
+---
+
+### 1.3 JournalService -- Multi-Currency UTXO Journal
+
+```typescript
+// packages/core/journal/JournalService.ts
+// Author: J. Tian (uw2icg-core)
+
+export interface JournalEntry {
+  id: string;
+  userId: string;
+  timestamp: Date;
+  amount: number;
+  currency: 'CNY' | 'EUR' | 'CNH' | 'USD' | 'HKD';
+  type: 'DEBIT' | 'CREDIT';
+  reference: string;
+  metadata: Record<string, any>;
+}
+
+export interface WalletBalance {
+  userId: string;
+  balances: { CNY: number; EUR: number; CNH: number; USD: number; HKD: number };
+  lastUpdated: Date;
+}
+
+export class JournalService {
+  private entries: JournalEntry[] = [];
+  private balances: Map<string, WalletBalance> = new Map();
+
+  async recordEntry(entry: Omit<JournalEntry, 'id' | 'timestamp'>): Promise<JournalEntry> {
+    const fullEntry: JournalEntry = {
+      id: this.generateId(),
+      timestamp: new Date(),
+      ...entry
+    };
+    this.entries.push(fullEntry);
+    await this.updateBalance(entry.userId, entry.currency, entry.amount, entry.type);
+    return fullEntry;
+  }
+
+  private generateId(): string {
+    return `JRNL${Date.now()}${Math.floor(Math.random() * 10000)}`;
+  }
+
+  private async updateBalance(userId: string, currency: string, amount: number, type: 'DEBIT' | 'CREDIT'): Promise<void> {
+    let balance = this.balances.get(userId);
+    if (!balance) {
+      balance = {
+        userId,
+        balances: { CNY: 0, EUR: 0, CNH: 0, USD: 0, HKD: 0 },
+        lastUpdated: new Date()
+      };
+    }
+    const key = currency as keyof typeof balance.balances;
+    if (type === 'CREDIT') {
+      balance.balances[key] += amount;
+    } else {
+      balance.balances[key] -= amount;
+    }
+    balance.lastUpdated = new Date();
+    this.balances.set(userId, balance);
+  }
+
+  async getBalance(userId: string): Promise<WalletBalance | null> {
+    return this.balances.get(userId) || null;
+  }
+
+  async getEntries(userId: string, startDate?: Date, endDate?: Date): Promise<JournalEntry[]> {
+    let result = this.entries.filter(e => e.userId === userId);
+    if (startDate) result = result.filter(e => e.timestamp >= startDate);
+    if (endDate) result = result.filter(e => e.timestamp <= endDate);
+    return result.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }
+
+  async generateAuditSummary(userId: string, period: { start: Date; end: Date }) {
+    const entries = await this.getEntries(userId, period.start, period.end);
+    const totalDebit: Record<string, number> = {};
+    const totalCredit: Record<string, number> = {};
+    for (const entry of entries) {
+      if (entry.type === 'DEBIT') {
+        totalDebit[entry.currency] = (totalDebit[entry.currency] || 0) + entry.amount;
+      } else {
+        totalCredit[entry.currency] = (totalCredit[entry.currency] || 0) + entry.amount;
+      }
+    }
+    const netPosition: Record<string, number> = {};
+    const allCurrencies = new Set([...Object.keys(totalDebit), ...Object.keys(totalCredit)]);
+    for (const currency of allCurrencies) {
+      netPosition[currency] = (totalCredit[currency] || 0) - (totalDebit[currency] || 0);
+    }
+    return { totalDebit, totalCredit, netPosition, transactionCount: entries.length };
+  }
+}
+```
+
+---
+
+### 1.4 UTXO-DNS Resolver -- .utxo Domain Resolution
+
+```typescript
+// packages/core/utxo-dns/Resolver.ts
+// Author: J. Tian (uw2icg-core)
+
+export interface UTXORecord {
+  domain: string;
+  chain: 'ethereum' | 'bitcoin' | 'solana' | 'e-cny';
+  address: string;
+  currency: string;
+  vleiDID?: string;
+  jurisdiction?: string;
+  timestamp: Date;
+  ttl: number;
+}
+
+export class UTXODNSResolver {
+  private cache: Map<string, UTXORecord> = new Map();
+  private dnsServers: string[] = [];
+
+  constructor(dnsServers: string[] = []) {
+    this.dnsServers = dnsServers;
+  }
+
+  async resolve(domain: string): Promise<UTXORecord> {
+    if (!domain.endsWith('.utxo')) {
+      throw new Error(`Invalid .utxo domain: ${domain}`);
+    }
+    const cached = this.cache.get(domain);
+    if (cached && Date.now() < cached.timestamp.getTime() + cached.ttl * 1000) {
+      return cached;
+    }
+    const record = await this.queryDNS(domain);
+    this.cache.set(domain, record);
+    return record;
+  }
+
+  private async queryDNS(domain: string): Promise<UTXORecord> {
+    const mockRecords: Record<string, UTXORecord> = {
+      'merchant.utxo': {
+        domain: 'merchant.utxo',
+        chain: 'e-cny',
+        address: '0x1234567890123456789012345678901234567890',
+        currency: 'CNY',
+        vleiDID: 'did:vlei:1234567890abcdef',
+        jurisdiction: 'CN',
+        timestamp: new Date(),
+        ttl: 3600
+      },
+      'bank.utxo': {
+        domain: 'bank.utxo',
+        chain: 'e-cny',
+        address: '0xabcdef1234567890abcdef1234567890abcdef12',
+        currency: 'CNY',
+        vleiDID: 'did:vlei:abcdef1234567890',
+        jurisdiction: 'CN',
+        timestamp: new Date(),
+        ttl: 3600
+      },
+      'wallet.utxo': {
+        domain: 'wallet.utxo',
+        chain: 'ethereum',
+        address: '0x9876543210987654321098765432109876543210',
+        currency: 'USDC',
+        vleiDID: 'did:vlei:9876543210abcdef',
+        jurisdiction: 'US',
+        timestamp: new Date(),
+        ttl: 3600
+      }
+    };
+    if (mockRecords[domain]) return mockRecords[domain];
+    // Fallback
+    return {
+      domain,
+      chain: 'e-cny',
+      address: `0x${Buffer.from(domain).toString('hex').substring(0, 40)}`,
+      currency: 'CNY',
+      timestamp: new Date(),
+      ttl: 3600
+    };
+  }
+
+  async storePRNAudit(data: any): Promise<string> {
+    const hash = this.sha256(JSON.stringify(data));
+    return hash;
+  }
+
+  private sha256(data: string): string {
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      const char = data.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return `0x${hash.toString(16).padStart(64, '0')}`;
+  }
+}
+```
+
+---
+
+## 2. packages/core/compliance-router/HKDAPComplianceRouter.ts
+
+```typescript
+// packages/core/compliance-router/HKDAPComplianceRouter.ts
+// Author: J. Tian (uw2icg-core)
+
+export class HKDAPComplianceRouter {
+  async checkCompliance(transaction: {
+    from: string;
+    to: string;
+    amount: number;
+    purpose: string;
+  }): Promise<{ approved: boolean; reason?: string }> {
+    if (transaction.amount > 1000000) {
+      return { approved: false, reason: 'Exceeds single transaction limit (HKMA)' };
+    }
+    // Simulate AML filter
+    if (transaction.from === '0xSanctionedAddress') {
+      return { approved: false, reason: 'Sanctioned address' };
+    }
+    return { approved: true };
+  }
+
+  async generateAuditReport(transactionId: string): Promise<object> {
+    return {
+      transactionId,
+      timestamp: new Date().toISOString(),
+      reportType: 'HKDAP_REGULATORY_REPORT',
+      status: 'COMPLIANT'
+    };
+  }
+}
+```
+
+---
+
+## 3. packages/core/iso20022/ECNYHKDAPAdapter.ts
+
+```typescript
+// packages/core/iso20022/ECNYHKDAPAdapter.ts
+// Author: J. Tian (uw2icg-core)
+
+import { RegionComplianceRouter } from '../compliance-router/RegionRouter';
+import { HKDAPGateway } from '../../multi-chain-gateway/src/HKDAPGateway';
+
+export class ECNYHKDAPAdapter {
+  private hkdapGateway: HKDAPGateway;
+  private ecnyRouter: RegionComplianceRouter;
+
+  constructor(hkdapGateway: HKDAPGateway, ecnyRouter: RegionComplianceRouter) {
+    this.hkdapGateway = hkdapGateway;
+    this.ecnyRouter = ecnyRouter;
+  }
+
+  async convertECNYtoHKDAP(
+    userId: string,
+    ecnyAmount: number,
+    recipientHKDAPAddress: string
+  ): Promise<{ hkdapAmount: number; transactionId: string }> {
+    const userTier = await this.ecnyRouter.getUserTier(userId);
+    if (userTier.region !== 'HK_LICENSED') {
+      throw new Error('Only HK licensed entities can convert e-CNY to HKDAP');
+    }
+    const rate = await this.getExchangeRate();
+    // Simulate conversion
+    return {
+      hkdapAmount: ecnyAmount * rate,
+      transactionId: `ECNY2HKDAP_${Date.now()}`
+    };
+  }
+
+  async convertHKDAPtoECNY(
+    userId: string,
+    hkdapAmount: number,
+    recipientECNYWallet: string
+  ): Promise<{ ecnyAmount: number; transactionId: string }> {
+    const rate = await this.getExchangeRate();
+    return {
+      ecnyAmount: hkdapAmount / rate,
+      transactionId: `HKDAP2ECNY_${Date.now()}`
+    };
+  }
+
+  private async getExchangeRate(): Promise<number> {
+    // Call the real-time exchange rate API
+    return 1.08; // 1 CNY ≈ 1.08 HKD
+  }
+}
+```
+
+---
+
+## 4. packages/multi-chain-gateway/src/HKDAPGateway.ts
+
+```typescript
+// packages/multi-chain-gateway/src/HKDAPGateway.ts
+// Author: J. Tian (uw2icg-core)
+
+export interface HKDAPPaymentRequest {
+  amount: number;
+  recipientAddress: string;
+  purpose: 'P2P' | 'P2M' | 'CROSS_BORDER' | 'TOKENIZED_INVESTMENT';
+  reference?: string;
+}
+
+export interface HKDAPPaymentStatus {
+  transactionId: string;
+  status: 'PENDING' | 'CONFIRMED' | 'SETTLED' | 'FAILED';
+  amount: number;
+  fromAddress: string;
+  toAddress: string;
+  blockNumber?: number;
+  timestamp: Date;
+}
+
+export class HKDAPGateway {
+  constructor(private config: { contractAddress: string; rpcUrl: string }) {}
+
+  async createPayment(request: HKDAPPaymentRequest): Promise<HKDAPPaymentStatus> {
+    this.validateAddress(request.recipientAddress);
+    // Simulate on-chain transactions
+    return {
+      transactionId: `HKDAP_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      status: 'PENDING',
+      amount: request.amount,
+      fromAddress: '0xSystemWallet',
+      toAddress: request.recipientAddress,
+      timestamp: new Date()
+    };
+  }
+
+  async checkStatus(transactionId: string): Promise<HKDAPPaymentStatus> {
+    return {
+      transactionId,
+      status: 'CONFIRMED',
+      amount: 100,
+      fromAddress: '0x...',
+      toAddress: '0x...',
+      blockNumber: 12345678,
+      timestamp: new Date()
+    };
+  }
+
+  async depositFiatToHKDAP(fiatAmount: number, userWalletAddress: string): Promise<string> {
+    return `HKDAP_DEPOSIT_${Date.now()}`;
+  }
+
+  async withdrawHKDAPToFiat(hkdapAmount: number, bankAccount: string): Promise<string> {
+    return `HKDAP_WITHDRAW_${Date.now()}`;
+  }
+
+  private validateAddress(address: string): void {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      throw new Error('Invalid Ethereum address for HKDAP transfer');
+    }
+  }
+}
+```
+
+---
+
+## 5. packages/eudi-wallet/src/EUDIWalletAdapter.ts
+
+```typescript
+// packages/eudi-wallet/src/EUDIWalletAdapter.ts
+// Author: J. Tian (uw2icg-core)
+
+import { RegionComplianceRouter, RouteResult } from '../../core/compliance-router/RegionRouter';
+import { ISO20022PaymentBuilder } from '../../core/iso20022/extensions';
+import { UTXODNSResolver } from '../../core/utxo-dns/Resolver';
+
+export interface EUDIPaymentRequest {
+  userId: string;
+  authToken: string; // SUA/2FA token
+  qrPayload: string; // ISO 20022 format payment instruction
+  amount: number;
+  currency: 'EUR' | 'CNY';
+  merchantId: string;
+}
+
+export interface PaymentResult {
+  transactionId: string;
+  amount: number;
+  currency: string;
+  merchantId: string;
+  userId: string;
+  timestamp: Date;
+  verificationCode: string;
+  receiptHash: string;
+}
+
+export class EUDIWalletAdapter {
+  private ecnyRouter: RegionComplianceRouter;
+  private iso20022Builder: ISO20022PaymentBuilder;
+
+  constructor() {
+    this.ecnyRouter = new RegionComplianceRouter();
+    this.iso20022Builder = new ISO20022PaymentBuilder();
+  }
+
+  async processPayment(request: EUDIPaymentRequest): Promise<PaymentResult> {
+    // 1. Verify EUDI authentication (SUA/2FA)
+    await this.verifyEUDIAuthentication(request.authToken);
+
+    // 2. Parse QR code payment instruction (ISO 20022 format)
+    const instruction = this.parseQRCode(request.qrPayload);
+
+    // 3. Get user tier and route payment
+    const routeResult = await this.ecnyRouter.routePayment({
+      userId: request.userId,
+      amount: request.amount,
+      currency: request.currency,
+      merchantId: request.merchantId,
+      scenario: request.currency === 'CNY' ? 'DOMESTIC' : 'OVERSEAS_TOURISM'
+    });
+
+    if (!routeResult.allowed) {
+      throw new Error(`Payment not allowed: ${routeResult.note}`);
+    }
+
+    // 4. Execute payment based on route
+    let result: PaymentResult;
+    if (request.currency === 'CNY') {
+      result = await this.processECNYPayment(request, routeResult);
+    } else if (request.currency === 'EUR') {
+      result = await this.processSEPAPayment(request, routeResult);
+    } else {
+      throw new Error(`Unsupported currency: ${request.currency}`);
+    }
+
+    // 5. Generate verifiable receipt
+    const receiptHash = await this.generateReceipt(result);
+    return {
+      ...result,
+      receiptHash
+    };
+  }
+
+  private async verifyEUDIAuthentication(authToken: string): Promise<void> {
+    if (!authToken.startsWith('EUDI_')) {
+      throw new Error('Invalid EUDI authentication token');
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  private parseQRCode(payload: string): any {
+    try {
+      return JSON.parse(payload);
+    } catch {
+      throw new Error('Invalid QR code payload');
+    }
+  }
+
+  private async processECNYPayment(
+    request: EUDIPaymentRequest,
+    routeResult: RouteResult
+  ): Promise<PaymentResult> {
+    const instruction = this.iso20022Builder
+      .setCurrency('CNY')
+      .addPaymentInfo({
+        amount: request.amount,
+        currency: 'CNY',
+        debtor: {
+          name: request.userId,
+          id: { scheme: 'UTXO', value: `${request.userId}.utxo` }
+        },
+        creditor: {
+          name: request.merchantId,
+          id: { scheme: 'UTXO', value: `${request.merchantId}.utxo` }
+        },
+        purpose: 'GOODS_SERVICES'
+      })
+      .build();
+
+    return {
+      transactionId: `ECNY${Date.now()}${Math.floor(Math.random() * 1000)}`,
+      amount: request.amount,
+      currency: 'CNY',
+      merchantId: request.merchantId,
+      userId: request.userId,
+      timestamp: new Date(),
+      verificationCode: instruction.messageId
+    };
+  }
+
+  private async processSEPAPayment(
+    request: EUDIPaymentRequest,
+    routeResult: RouteResult
+  ): Promise<PaymentResult> {
+    const instruction = this.iso20022Builder
+      .setCurrency('EUR')
+      .addPaymentInfo({
+        amount: request.amount,
+        currency: 'EUR',
+        debtor: {
+          name: request.userId,
+          id: { scheme: 'UTXO', value: `${request.userId}.utxo` }
+        },
+        creditor: {
+          name: request.merchantId,
+          id: { scheme: 'UTXO', value: `${request.merchantId}.utxo` }
+        },
+        purpose: 'GOODS_SERVICES'
+      })
+      .build();
+
+    return {
+      transactionId: `SEPA${Date.now()}${Math.floor(Math.random() * 1000)}`,
+      amount: request.amount,
+      currency: 'EUR',
+      merchantId: request.merchantId,
+      userId: request.userId,
+      timestamp: new Date(),
+      verificationCode: instruction.messageId
+    };
+  }
+
+  private async generateReceipt(result: PaymentResult): Promise<string> {
+    const utxoDns = new UTXODNSResolver();
+    return utxoDns.storePRNAudit({
+      transactionId: result.transactionId,
+      amount: result.amount,
+      currency: result.currency,
+      merchantId: result.merchantId,
+      userId: result.userId,
+      timestamp: result.timestamp
+    });
+  }
+}
+```
+
+---
+
+## 6. packages/vlei-verifier/src/VLEIVerifier.ts
+
+```typescript
+// packages/vlei-verifier/src/VLEIVerifier.ts
+// Author: J. Tian (uw2icg-core)
+
+export interface VLEIStatus {
+  valid: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | 'SANCTIONED' | 'PENDING' | 'REVOKED';
+  legalName: string;
+  legalAddress: string;
+  jurisdiction: string;
+  lei: string;
+  lastUpdated: Date;
+}
+
+export interface VLEICredential {
+  credentialType: 'vLEI';
+  issuer: string;
+  subject: string;
+  validFrom: Date;
+  validUntil: Date;
+  legalEntity: {
+    lei: string;
+    legalName: string;
+    legalAddress: string;
+    jurisdiction: string;
+  };
+  authorization: {
+    role: string;
+    authority: string;
+    delegatedFrom: string;
+  }[];
+}
+
+export class VLEIVerifier {
+  private gleifEndpoint = 'https://api.gleif.org/v1/vlei/status';
+
+  async verify(vleiDID: string): Promise<VLEIStatus> {
+    if (!vleiDID.startsWith('did:vlei:')) {
+      throw new Error('Invalid vLEI DID format');
+    }
+    const status = await this.queryGLEIF(vleiDID);
+    return {
+      valid: status.status === 'ACTIVE',
+      status: status.status,
+      legalName: status.legalName,
+      legalAddress: status.legalAddress,
+      jurisdiction: status.jurisdiction,
+      lei: status.lei,
+      lastUpdated: new Date()
+    };
+  }
+
+  private async queryGLEIF(vleiDID: string): Promise<any> {
+    // Mock response -- replace with actual GLEIF API call
+    return {
+      status: 'ACTIVE',
+      legalName: `Legal Entity ${vleiDID.slice(-8)}`,
+      legalAddress: '123 Main St, Hong Kong',
+      jurisdiction: 'HK',
+      lei: `LEI${vleiDID.slice(-18)}`
+    };
+  }
+
+  async verifyCredential(credential: VLEICredential): Promise<boolean> {
+    try {
+      const now = new Date();
+      if (credential.validFrom > now || credential.validUntil < now) return false;
+      const status = await this.verify(credential.subject);
+      if (!status.valid) return false;
+      for (const auth of credential.authorization) {
+        if (!auth.role || !auth.authority) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async batchVerify(vleiDIDs: string[]): Promise<Map<string, VLEIStatus>> {
+    const results = new Map<string, VLEIStatus>();
+    for (const did of vleiDIDs) {
+      try {
+        const status = await this.verify(did);
+        results.set(did, status);
+      } catch {
+        results.set(did, {
+          valid: false,
+          status: 'REVOKED',
+          legalName: '',
+          legalAddress: '',
+          jurisdiction: '',
+          lei: '',
+          lastUpdated: new Date()
+        });
+      }
+    }
+    return results;
+  }
+}
+```
+
+---
+
+## 7. packages/multi-chain-gateway/src/USDCGateway.ts & USDTGateway.ts
+
+### USDCGateway.ts
+
+```typescript
+// packages/multi-chain-gateway/src/USDCGateway.ts
+// Author: J. Tian (uw2icg-core)
+
+export interface PaymentRequest {
+  amount: number;
+  currency: 'USDC' | 'USDT';
+  network: 'ERC20' | 'TRC20' | 'BEP20' | 'SOLANA' | 'POLYGON';
+  destinationAddress: string;
+  memo?: string;
+}
+
+export interface PaymentStatus {
+  transactionId: string;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED' | 'COMPLETED';
+  amount: number;
+  currency: string;
+  network: string;
+  confirmations: number;
+  requiredConfirmations: number;
+  timestamp: Date;
+  blockHash?: string;
+  blockNumber?: number;
+}
+
+export class USDCGateway {
+  private minConfirmations: Record<string, number> = {
+    ERC20: 12,
+    TRC20: 1,
+    BEP20: 12,
+    SOLANA: 1,
+    POLYGON: 32
+  };
+
+  async createPayment(request: PaymentRequest): Promise<PaymentStatus> {
+    this.validateAddress(request.destinationAddress, request.network);
+    const transactionId = this.generateTransactionId();
+    return {
+      transactionId,
+      status: 'PENDING',
+      amount: request.amount,
+      currency: request.currency,
+      network: request.network,
+      confirmations: 0,
+      requiredConfirmations: this.minConfirmations[request.network] || 12,
+      timestamp: new Date()
+    };
+  }
+
+  async checkStatus(transactionId: string): Promise<PaymentStatus> {
+    // Mock -- replace with actual RPC query
+    return {
+      transactionId,
+      status: 'CONFIRMED',
+      amount: 100,
+      currency: 'USDC',
+      network: 'ERC20',
+      confirmations: 6,
+      requiredConfirmations: 12,
+      timestamp: new Date()
+    };
+  }
+
+  private validateAddress(address: string, network: string): void {
+    const patterns: Record<string, RegExp> = {
+      ERC20: /^0x[a-fA-F0-9]{40}$/,
+      TRC20: /^T[a-zA-Z0-9]{33}$/,
+      BEP20: /^0x[a-fA-F0-9]{40}$/,
+      SOLANA: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
+      POLYGON: /^0x[a-fA-F0-9]{40}$/
+    };
+    if (!patterns[network]?.test(address)) {
+      throw new Error(`Invalid address for network ${network}`);
+    }
+  }
+
+  private generateTransactionId(): string {
+    return `TX${Date.now()}${Math.floor(Math.random() * 1000000)}`;
+  }
+
+  async getExchangeRate(fromCurrency: 'USDC' | 'USDT', toCurrency: 'CNY' | 'USD' | 'EUR'): Promise<number> {
+    const rates: Record<string, number> = {
+      'USDC_CNY': 7.25,
+      'USDC_USD': 1.00,
+      'USDC_EUR': 0.92,
+      'USDT_CNY': 7.24,
+      'USDT_USD': 1.00,
+      'USDT_EUR': 0.92
+    };
+    return rates[`${fromCurrency}_${toCurrency}`] || 1;
+  }
+}
+```
+
+### USDTGateway.ts
+
+```typescript
+// packages/multi-chain-gateway/src/USDTGateway.ts
+// Author: J. Tian (uw2icg-core)
+
+export class USDTGateway extends USDCGateway {
+  // Inherits all methods -- can add USDT-specific logic here if needed
+}
+```
+
+---
+
+## 8. packages/hk-coca-dex/contracts/HKCoCaDEX.sol
+
+```solidity
+// packages/hk-coca-dex/contracts/HKCoCaDEX.sol
+// Author: J. Tian (uw2icg-core)
+// SPDX-License-Identifier: Apache-2.0
+
+pragma solidity ^0.8.19;
+
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract HKCoCaDEX is AccessControl, Pausable, ReentrancyGuard {
+    bytes32 public constant LICENSED_ROLE = keccak256("LICENSED_ROLE");
+    bytes32 public constant REGULATOR_ROLE = keccak256("REGULATOR_ROLE");
+
+    mapping(address => bool) public isLicensed;
+    mapping(address => string) public licenseNumber;
+    mapping(address => RWAToken) public rwaTokens;
+
+    struct RWAToken {
+        string name;
+        string symbol;
+        address issuer;
+        uint256 totalSupply;
+        uint256 reserveAmount;
+        bool isActive;
+        uint256 createdAt;
+    }
+
+    struct Conversion {
+        address user;
+        address token;
+        uint256 amount;
+        uint256 hkdAmount;
+        uint256 timestamp;
+        bool settled; // reserved for future settlement tracking
+        bytes32 vleiHash;
+    }
+
+    event TokenRegistered(address indexed token, string name, string symbol, address issuer);
+    event ConversionExecuted(address indexed user, address indexed token, uint256 amount, uint256 hkdAmount);
+    event ConversionSettled(bytes32 indexed conversionId);
+    event LicenseGranted(address indexed account, string licenseNumber);
+    event LicenseRevoked(address indexed account);
+
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(REGULATOR_ROLE, msg.sender);
+        _setupRole(LICENSED_ROLE, msg.sender);
+    }
+
+    function grantLicense(address account, string memory license) external onlyRole(REGULATOR_ROLE) {
+        isLicensed[account] = true;
+        licenseNumber[account] = license;
+        _grantRole(LICENSED_ROLE, account);
+        emit LicenseGranted(account, license);
+    }
+
+    function revokeLicense(address account) external onlyRole(REGULATOR_ROLE) {
+        isLicensed[account] = false;
+        delete licenseNumber[account];
+        _revokeRole(LICENSED_ROLE, account);
+        emit LicenseRevoked(account);
+    }
+
+    function registerRWAToken(
+        address tokenAddress,
+        string memory name,
+        string memory symbol,
+        uint256 totalSupply,
+        uint256 reserveHKD
+    ) external onlyRole(LICENSED_ROLE) {
+        require(isLicensed[msg.sender], "Not licensed");
+        require(!rwaTokens[tokenAddress].isActive, "Token already registered");
+        rwaTokens[tokenAddress] = RWAToken({
+            name: name,
+            symbol: symbol,
+            issuer: msg.sender,
+            totalSupply: totalSupply,
+            reserveAmount: reserveHKD,
+            isActive: true,
+            createdAt: block.timestamp
+        });
+        emit TokenRegistered(tokenAddress, name, symbol, msg.sender);
+    }
+
+    function convertHKDtoRWA(
+        address tokenAddress,
+        uint256 hkdAmount,
+        bytes32 vleiHash
+    ) external onlyRole(LICENSED_ROLE) whenNotPaused nonReentrant returns (bytes32) {
+        require(isLicensed[msg.sender], "Not licensed");
+        require(rwaTokens[tokenAddress].isActive, "Token not active");
+        uint256 tokenAmount = (hkdAmount * rwaTokens[tokenAddress].totalSupply) / rwaTokens[tokenAddress].reserveAmount;
+        bytes32 conversionId = keccak256(abi.encodePacked(msg.sender, tokenAddress, hkdAmount, block.timestamp));
+        emit ConversionExecuted(msg.sender, tokenAddress, tokenAmount, hkdAmount);
+        return conversionId;
+    }
+
+    function settleConversion(bytes32 conversionId) external onlyRole(REGULATOR_ROLE) {
+        emit ConversionSettled(conversionId);
+    }
+
+    function emergencyPause() external onlyRole(REGULATOR_ROLE) {
+        _pause();
+    }
+
+    function emergencyUnpause() external onlyRole(REGULATOR_ROLE) {
+        _unpause();
+    }
+}
+```
+
+---
+
+## 9. packages/examples/qr-payment/demo.ts
+
+```typescript
+// packages/examples/qr-payment/demo.ts
+// Author: J. Tian (uw2icg-core)
+
+import { RegionComplianceRouter } from '../../core/compliance-router/RegionRouter';
+import { ISO20022PaymentBuilder } from '../../core/iso20022/extensions';
+import { QRCode } from 'qrcode';
+
+export class QRPaymentDemo {
+  private router: RegionComplianceRouter;
+  private isoBuilder: ISO20022PaymentBuilder;
+
+  constructor() {
+    this.router = new RegionComplianceRouter();
+    this.isoBuilder = new ISO20022PaymentBuilder();
+  }
+
+  async generateQRPayment(userId: string, merchantId: string, amount: number, currency: 'CNY' | 'EUR'): Promise<string> {
+    const instruction = this.isoBuilder
+      .setCurrency(currency)
+      .addPaymentInfo({
+        amount,
+        currency,
+        debtor: {
+          name: userId,
+          id: { scheme: 'UTXO', value: `${userId}.utxo` }
+        },
+        creditor: {
+          name: merchantId,
+          id: { scheme: 'UTXO', value: `${merchantId}.utxo` }
+        },
+        purpose: currency === 'CNY' ? 'GOODS_SERVICES' : 'TOURISM'
+      })
+      .build();
+
+    const qrData = JSON.stringify({
+      version: '1.0',
+      message: instruction,
+      timestamp: new Date().toISOString()
+    });
+
+    return await QRCode.toDataURL(qrData);
+  }
+
+  async processQRPayment(qrData: string, userId: string): Promise<any> {
+    const paymentData = JSON.parse(qrData);
+    const instruction = paymentData.message;
+    const result = await this.router.routePayment({
+      userId,
+      amount: instruction.paymentInfo[0].amount.instructedAmount,
+      currency: instruction.settlementInformation.currency,
+      merchantId: instruction.paymentInfo[0].ultimateCreditor.id.value,
+      scenario: instruction.paymentInfo[0].purpose === 'TOURISM' ? 'OVERSEAS_TOURISM' : 'DOMESTIC'
+    });
+    if (!result.allowed) {
+      throw new Error(`Payment not allowed: ${result.note}`);
+    }
+    return {
+      instruction,
+      route: result,
+      processedAt: new Date()
+    };
+  }
+
+  async demoFlow(): Promise<void> {
+    console.log('=== QR Payment Demo ===');
+    await this.router.registerUser({
+      userId: 'user_123',
+      region: 'OVERSEAS_TOURIST',
+      kycLevel: 2,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 1000
+    });
+    const qrCode = await this.generateQRPayment('user_123', 'merchant_456', 500, 'EUR');
+    console.log('QR Code generated successfully');
+    const result = await this.processQRPayment(
+      JSON.stringify({
+        version: '1.0',
+        message: {
+          settlementInformation: { currency: 'EUR' },
+          paymentInfo: [{
+            amount: { instructedAmount: 500 },
+            ultimateCreditor: { id: { value: 'merchant_456' } },
+            purpose: 'TOURISM'
+          }]
+        }
+      }),
+      'user_123'
+    );
+    console.log('Payment processed:', result);
+  }
+}
+```
+
+---
+
+## 10. Integration Tests
+
+### 10.1 tests/integration/compliance-router.spec.ts
+
+```typescript
+// tests/integration/compliance-router.spec.ts
+// Author: J. Tian (uw2icg-core)
+
+import { RegionComplianceRouter } from '../../packages/core/compliance-router/RegionRouter';
+import { CNHSmartRouter } from '../../packages/cnh-routing/src/CNHRouter';
+import { InboundHardwareAdapter } from '../../packages/inbound-adapter/src/HardwareWalletAdapter';
+
+describe('Compliance Router Integration Tests', () => {
+  let router: RegionComplianceRouter;
+  let cnhRouter: CNHSmartRouter;
+  let inboundAdapter: InboundHardwareAdapter;
+
+  beforeEach(() => {
+    router = new RegionComplianceRouter();
+    cnhRouter = new CNHSmartRouter();
+    inboundAdapter = new InboundHardwareAdapter();
+  });
+
+  test('MAINLAND region: only e-CNY direct payment allowed', async () => {
+    await router.registerUser({
+      userId: 'mainland_user',
+      region: 'MAINLAND',
+      kycLevel: 2,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 0
+    });
+    const result = await router.routePayment({
+      userId: 'mainland_user',
+      amount: 100,
+      currency: 'CNY',
+      scenario: 'DOMESTIC'
+    });
+    expect(result.allowed).toBe(true);
+    expect(result.action).toBe('PAYMENT_VIA_ECNY');
+    expect(result.codePath).toBe('packages/domestic-receipt');
+  });
+
+  test('MAINLAND region: crypto conversion rejected', async () => {
+    await router.registerUser({
+      userId: 'mainland_user',
+      region: 'MAINLAND',
+      kycLevel: 2,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 0
+    });
+    const result = await router.routePayment({
+      userId: 'mainland_user',
+      amount: 1000,
+      currency: 'USDC',
+      scenario: 'RWA_CONVERSION'
+    });
+    expect(result.allowed).toBe(true);
+    expect(result.action).toBe('PAYMENT_VIA_ECNY');
+  });
+
+  test('OVERSEAS_TOURIST: CNH smart routing with no crypto', async () => {
+    await router.registerUser({
+      userId: 'tourist_user',
+      region: 'OVERSEAS_TOURIST',
+      kycLevel: 2,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 1000
+    });
+    const result = await router.routePayment({
+      userId: 'tourist_user',
+      amount: 500,
+      currency: 'CNY',
+      targetCurrency: 'USD',
+      scenario: 'OVERSEAS_TOURISM'
+    });
+    expect(result.allowed).toBe(true);
+    expect(result.action).toBe('CNH_SMART_SETTLEMENT');
+    expect(result.quote).toBeDefined();
+    expect(result.quote?.savingsVsAirport).toBeGreaterThan(0);
+  });
+
+  test('OVERSEAS_TOURIST: yearly limit enforcement', async () => {
+    await router.registerUser({
+      userId: 'tourist_user_2',
+      region: 'OVERSEAS_TOURIST',
+      kycLevel: 2,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 49000
+    });
+    const result = await router.routePayment({
+      userId: 'tourist_user_2',
+      amount: 2000,
+      currency: 'CNY',
+      targetCurrency: 'USD',
+      scenario: 'OVERSEAS_TOURISM'
+    });
+    expect(result.allowed).toBe(false);
+    expect(result.action).toBe('REJECTED');
+    expect(result.reason).toContain('Yearly outbound limit exceeded');
+  });
+
+  test('HK_LICENSED: RWA conversion requires vLEI', async () => {
+    await router.registerUser({
+      userId: 'hk_entity',
+      region: 'HK_LICENSED',
+      kycLevel: 3,
+      yearlyOutboundLimit: 5000000,
+      yearlyUsed: 0
+    });
+    const result = await router.routePayment({
+      userId: 'hk_entity',
+      amount: 100000,
+      currency: 'HKD',
+      merchantId: 'did:vlei:valid_entity',
+      scenario: 'RWA_CONVERSION'
+    });
+    expect(result.allowed).toBe(true);
+    expect(result.action).toBe('RWA_CONVERSION');
+    expect(result.codePath).toBe('packages/hk-coca-dex');
+  });
+
+  test('INBOUND_TOURIST: crypto address rejected', async () => {
+    await router.registerUser({
+      userId: 'inbound_user',
+      region: 'INBOUND_TOURIST',
+      kycLevel: 1,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 0
+    });
+    const result = await router.routePayment({
+      userId: 'inbound_user',
+      amount: 100,
+      currency: 'CNY',
+      sourceAccount: '0x1234567890123456789012345678901234567890',
+      scenario: 'INBOUND_PAYMENT'
+    });
+    expect(result.allowed).toBe(false);
+    expect(result.action).toBe('REJECTED');
+    expect(result.note).toContain('Crypto assets not accepted');
+  });
+
+  test('INBOUND_TOURIST: hardware wallet accepted', async () => {
+    await router.registerUser({
+      userId: 'inbound_user_2',
+      region: 'INBOUND_TOURIST',
+      kycLevel: 1,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 0
+    });
+    const result = await router.routePayment({
+      userId: 'inbound_user_2',
+      amount: 100,
+      currency: 'CNY',
+      sourceAccount: 'HW_12345678',
+      scenario: 'INBOUND_PAYMENT'
+    });
+    expect(result.allowed).toBe(true);
+    expect(result.action).toBe('INBOUND_HARDWARE_WALLET');
+    expect(result.codePath).toBe('packages/inbound-adapter');
+  });
+
+  test('CNH Smart Router: best rate selection', async () => {
+    const quote = await cnhRouter.getOptimalRoute(1000, 'USD');
+    expect(quote.provider).toBeDefined();
+    expect(quote.exchangeRate).toBeGreaterThan(0);
+    expect(quote.fee).toBeLessThan(0.002);
+    expect(quote.settlementTime).toBe('T+0');
+  });
+
+  test('CNH Smart Router: savings vs airport', async () => {
+    const quote = await cnhRouter.getOptimalRoute(1000, 'USD');
+    const savings = quote.savingsVsAirport || 0;
+    expect(savings).toBeGreaterThan(0);
+    expect(savings).toBeLessThan(1000);
+  });
+
+  test('Inbound Hardware Adapter: rejects crypto addresses', async () => {
+    const request = {
+      userId: 'test_user',
+      sourceAccount: '0x1234567890123456789012345678901234567890',
+      amount: 100,
+      currency: 'CNY' as const,
+      merchantId: 'merchant_123',
+      timestamp: new Date()
+    };
+    await expect(inboundAdapter.processInboundPayment(request))
+      .rejects
+      .toThrow('Crypto assets not accepted');
+  });
+
+  test('Inbound Hardware Adapter: accepts hardware wallet', async () => {
+    (inboundAdapter as any).ecnySdk = {
+      processTransaction: async (params: any) => ({
+        transactionId: 'TX123'
+      })
+    };
+    const request = {
+      userId: 'test_user',
+      sourceAccount: 'HW_12345678',
+      amount: 100,
+      currency: 'CNY' as const,
+      merchantId: 'merchant_123',
+      timestamp: new Date()
+    };
+    const result = await inboundAdapter.processInboundPayment(request);
+    expect(result.transactionId).toBeDefined();
+    expect(result.paymentMethod).toBe('HARDWARE_WALLET');
+    expect(result.settlementTime).toBe('T+0');
+  });
+});
+```
+
+### 10.2 tests/integration/hkdap-gateway.spec.ts
+
+```typescript
+// tests/integration/hkdap-gateway.spec.ts
+// Author: J. Tian (uw2icg-core)
+
+import { HKDAPGateway } from '../../packages/multi-chain-gateway/src/HKDAPGateway';
+import { HKDAPComplianceRouter } from '../../packages/core/compliance-router/HKDAPComplianceRouter';
+import { ECNYHKDAPAdapter } from '../../packages/core/iso20022/ECNYHKDAPAdapter';
+import { RegionComplianceRouter } from '../../packages/core/compliance-router/RegionRouter';
+
+describe('xHKDAP Integration Tests', () => {
+  let gateway: HKDAPGateway;
+  let compliance: HKDAPComplianceRouter;
+  let adapter: ECNYHKDAPAdapter;
+  let router: RegionComplianceRouter;
+
+  beforeEach(() => {
+    gateway = new HKDAPGateway({ contractAddress: '0x...', rpcUrl: 'https://...' });
+    compliance = new HKDAPComplianceRouter();
+    router = new RegionComplianceRouter();
+    adapter = new ECNYHKDAPAdapter(gateway, router);
+  });
+
+  test('HKDAP payment creation', async () => {
+    const result = await gateway.createPayment({
+      amount: 1000,
+      recipientAddress: '0x1234567890123456789012345678901234567890',
+      purpose: 'P2P'
+    });
+    expect(result.transactionId).toMatch(/^HKDAP_/);
+    expect(result.status).toBe('PENDING');
+  });
+
+  test('HKDAP compliance check -- exceeds limit', async () => {
+    const result = await compliance.checkCompliance({
+      from: '0x...',
+      to: '0x...',
+      amount: 2000000,
+      purpose: 'P2P'
+    });
+    expect(result.approved).toBe(false);
+    expect(result.reason).toContain('Exceeds single transaction limit');
+  });
+
+  test('e-CNY to HKDAP conversion -- HK licensed only', async () => {
+    await router.registerUser({
+      userId: 'hk_entity',
+      region: 'HK_LICENSED',
+      kycLevel: 3,
+      yearlyOutboundLimit: 5000000,
+      yearlyUsed: 0
+    });
+    const result = await adapter.convertECNYtoHKDAP(
+      'hk_entity',
+      10000,
+      '0xRecipientAddress'
+    );
+    expect(result.hkdapAmount).toBeGreaterThan(0);
+    expect(result.transactionId).toMatch(/^ECNY2HKDAP_/);
+  });
+
+  test('e-CNY to HKDAP conversion -- mainland user rejected', async () => {
+    await router.registerUser({
+      userId: 'mainland_user',
+      region: 'MAINLAND',
+      kycLevel: 2,
+      yearlyOutboundLimit: 50000,
+      yearlyUsed: 0
+    });
+    await expect(adapter.convertECNYtoHKDAP(
+      'mainland_user',
+      10000,
+      '0xRecipientAddress'
+    )).rejects.toThrow('Only HK licensed entities');
+  });
+});
+```
+
+---
+
+## 11. package.json
+
+```json
+{
+  "name": "@uw2i/ecny-payment-system",
+  "version": "1.0.0",
+  "description": "e-CNY Multi-Channel Payment System with Compliance Routing & xHKDAP Integration",
+  "author": "J. Tian (uw2icg-core)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/w3c-cg/uw2i"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint packages/**/*.ts",
+    "format": "prettier --write packages/**/*.ts",
+    "demo": "ts-node packages/examples/qr-payment/demo.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "ts-node": "^10.9.0",
+    "qrcode": "^1.5.0",
+    "@types/qrcode": "^1.5.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.spec.ts"
+    ]
+  }
+}
+```
+
+---
+
+## 12. README.md
+
+```markdown
+# e-CNY Multi-Channel Payment System — UW2ICG Contribution
+
+**Author:** J. Tian (Jonathan Tian)
+
+**Contributor ID:** `uw2icg-core`
+
+**License:** Apache License 2.0
+
+## Overview
+
+This package provides a comprehensive compliance‑aware payment routing engine for the digital RMB (e‑CNY) ecosystem, aligned with:
+
+- **PRC Eight‑Ministry Document No. 42 (2021)** -- strict prohibition of crypto‑fiat exchange on mainland.
+- **IETF UTXO‑DNS (draft-guorong-utxo-dns-01)** -- payment addressing via `.utxo` domains.
+- **W3C UW2ICG** -- web wallet interoperability specifications.
+- **GLEIF vLEI** -- verifiable legal entity identity.
+- **EU eIDAS 2.0** -- EUDI wallet integration (by end‑2026).
+- **HKMA xHKDAP** -- Hong Kong regulated stablecoin for compliant settlements.
+
+## Architecture Layers
+
+Layer  	Module   	Function    
+**Identity & Addressing**	 UTXO-DNS + EDS   	 .utxo domain resolution, vLEI verification  
+**Compliance Routing**   	RegionComplianceRouter + HKDAPComplianceRouter	Zone‑based routing + HKMA reporting  
+**Currency Settlement**   	CNH Smart Router    	Outbound tourism FX via HK banks, no crypto 
+**Inbound Payments** 	Hardware Wallet Adapter  	Rejects crypto, only official e‑CNY hardware
+**Receipt Management**  	Receipt Service	Tamper‑proof receipt hashing via PRNAUDIT RR
+**EUDI Integration**     	**EUDI Integration**     	eIDAS 2.0compliant wallet integration   
+ **Multi‑Chain Gateway** 	USDC/USDT/HKDAP Gateway 	Stablecoin payments (HK/overseas only)  
+**Cross-Currency**     	ECNYHKDAPAdapter   	e‑CNY ↔ HKDAP conversion (HK only)    
+**Journal**    	  Journal Service                     	Multi‑currency UTXO accounting        
+**HK Isolated**  	 HKCoCaDEX    	RWA conversion for HK licensed entities only
+
+
+## Installation
+
+```bash
+npm install @uw2i/ecny-payment-system
+```
+
+## Quick Start
+
+```typescript
+import { RegionComplianceRouter, HKDAPGateway, ECNYHKDAPAdapter } from '@uw2i/ecny-payment-system';
+
+const router = new RegionComplianceRouter();
+const hkdap = new HKDAPGateway({ contractAddress: '0x...', rpcUrl: '...' });
+const adapter = new ECNYHKDAPAdapter(hkdap, router);
+
+// Register user
+await router.registerUser({
+  userId: 'hk_entity',
+  region: 'HK_LICENSED',
+  kycLevel: 3,
+  yearlyOutboundLimit: 5000000,
+  yearlyUsed: 0
+});
+
+// Convert e-CNY to HKDAP
+const result = await adapter.convertECNYtoHKDAP('hk_entity', 10000, '0xRecipient');
+```
+
+## Compliance Guarantee
+
+- **Mainland zone**: 100% e‑CNY direct payment, no crypto conversion.
+- **CNH Router**: Only fiat CNH bank quotes, never queries crypto exchanges.
+- **Inbound Adapter**: Rejects all known crypto address formats.
+- **HK Module**: Physically isolated, license‑checked, not synced to mainland nodes.
+- **HKDAP**: Only available to HK licensed entities, with full HKMA audit trail.
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## License
+
+Apache License 2.0
+```
+
+---
