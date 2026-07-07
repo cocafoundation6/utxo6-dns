@@ -1,8 +1,8 @@
 jmbc-consortium/
 ├── draft-guorong-utxo-dns-01/
-│   ├── specs/          # 规范文档
-│   ├── implementations/ # 参考实现
-│   └── test/           # ← 新建测试目录
-│       ├── testnet/    # 测试网络配置
-│       ├── tools/      # 测试工具
-│       └── results/    # 测试结果报告
+│   ├── specs/         
+│   ├── implementations/ 
+│   └── test/          
+│       ├── testnet/    
+│       ├── tools/      
+│       └── results/    
