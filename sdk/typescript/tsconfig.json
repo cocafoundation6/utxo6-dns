@@ -519,3 +519,95 @@ if (require.main === module) if (require.main === module) {
   }
 }
 ``````
+
+{
+  "name": "@utxo6-dns/core",
+  "version": "0.1.0",
+  "description": "Core TypeScript SDK for UTXO6-DNS: VRF-based IPv6 address resolution and PRN compliance integration",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "keywords": [
+    "utxo",
+    "dns",
+    "blockchain",
+    "ipv6",
+    "vrf",
+    "did",
+    "vlei",
+    "prn",
+    "coca"
+  ],
+  "author": "cocafoundation6",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cocafoundation6/utxo6-dns.git",
+    "directory": "sdk/typescript"
+  },
+  "bugs": {
+    "url": "https://github.com/cocafoundation6/utxo6-dns/issues"
+  },
+  "homepage": "https://github.com/cocafoundation6/utxo6-dns/tree/main/sdk/typescript#readme",
+  "dependencies": {
+    "@noble/ed25519": "^2.1.0",
+    "dns-packet": "^5.6.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.30",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test"]
+}
+
+git add sdk/typescript/package.json sdk/typescript/tsconfig.json
+git commit -m "chore: fully populate typescript sdk configs"
+git push origin main
