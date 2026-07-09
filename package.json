@@ -1,0 +1,14 @@
+{
+  "name": "utxo6-dns-monorepo",
+  "private": true,
+  "workspaces": [
+    "sdk/typescript"
+  ],
+  "scripts": {
+    "test": "pnpm --filter ./sdk/typescript test",
+    "test:ci": "pnpm --filter ./sdk/typescript test --coverage"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
