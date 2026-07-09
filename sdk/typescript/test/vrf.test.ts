@@ -1,14 +1,44 @@
-import { describe, it, expect } from 'vitest';
+import { VRFGenerator } from '../src/core/vrf';
 
-// Placeholder VRF tests — replace with real VRF imports & assertions when available.
-describe('VRF (placeholder)', () => {
-  it('sanity: 1 + 1 = 2', () => {
-    expect(1 + 1).toBe(2);
+describe('VRFGenerator', () => {
+  let generator: VRFGenerator;
+  const testPrivateKey = new Uint8Array(32).fill(1);
+  const testPublicKey = new Uint8Array(32).fill(2);
+  const testMessage = new TextEncoder().encode('test-utxo-txid');
+
+  beforeEach(() => {
+    generator = new VRFGenerator();
   });
 
-  it('placeholder: VRF output should be a hex string', () => {
-    const vrfHex = 'a1b2c3d4e5f6';
-    expect(typeof vrfHex).toBe('string');
-    expect(vrfHex).toMatch(/^[0-9a-f]+$/i);
+  test('should generate a proof and output hash from a message', () => {
+    const { proof, output } = generator.generateProof(testPrivateKey, testMessage);
+
+    expect(proof).toBeInstanceOf(Uint8Array);
+    expect(proof.length).toBe(64);
+    expect(output).toBeInstanceOf(Uint8Array);
+    expect(output.length).toBe(32);
+  });
+
+  test('should verify a valid proof successfully', () => {
+    const { proof, output } = generator.generateProof(testPrivateKey, testMessage);
+    const isValid = generator.verifyProof(testPublicKey, proof, testMessage);
+
+    expect(isValid).toBe(true);
+  });
+
+  test('should reject an invalid proof', () => {
+    const { proof } = generator.generateProof(testPrivateKey, testMessage);
+    const tamperedMessage = new TextEncoder().encode('tampered-message');
+    const isValid = generator.verifyProof(testPublicKey, proof, tamperedMessage);
+
+    expect(isValid).toBe(false);
+  });
+
+  test('should generate a deterministic 64-bit IPv6 IID from output', () => {
+    const { output } = generator.generateProof(testPrivateKey, testMessage);
+    const iid = generator.generateIPv6IID(output);
+
+    expect(iid).toMatch(/^[0-9a-f]{16}$/);
+    expect(iid.length).toBe(16);
   });
 });
