@@ -75,6 +75,16 @@ UTXO6-DNS is an open-source protocol that anchors blockchain UTXO ownership to I
 - **vLEI Integration**: GLEIF Verifiable Legal Entity Identity Authentication
 - **Multi-Chain Support**: Bitcoin, Ethereum, Solana, etc.
 
+Then see the examples/cross_border_payment.rs for a complete end‑to‑end payment flow.
+
+References
+IETF draft‑guorong‑utxo‑dns‑01
+
+BIS Project Agorá Technical Report (2026)
+
+PRN Security Framework (JMBC)
+
+GLEIF vLEI Standard
 
 ## Quick Start
 
