@@ -4,6 +4,13 @@
 [![W3C CG](https://img.shields.io/badge/W3C-UW2ICG-green)](https://www.w3.org/community/uw2icg/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## Community & Related Links
+
+- [**IETF DNSOP Working Group**](https://datatracker.ietf.org/group/dnsop/about/) – DNS protocol standardization.
+- [**ENS (Ethereum Name Service)**](https://ens.domains/) – Decentralised naming for Web3.
+- [**W3C UW2ICG**](https://www.w3.org/community/uw2icg/) – Decentralised identity and verifiable credentials.
+- [**GLEIF vLEI**](https://www.gleif.org/en/vlei/) – Legal‑entity trust layer for compliance.
+
 ## Overview
 
 UTXO6-DNS is an open-source protocol that anchors blockchain UTXO ownership to IPv6 Interface Identifiers (IIDs) via Verifiable Random Functions (VRF), enabling each IPv6 address to serve as a cryptographically verifiable binding for digital assets—transforming IPv6 addresses from mere network locators into programmable asset endpoints.
