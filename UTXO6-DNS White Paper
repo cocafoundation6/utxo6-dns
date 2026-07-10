@@ -1,0 +1,177 @@
+# UTXO6-DNS White Paper
+
+**Version**: v0.1.0  
+**Status**: Draft (IETF Experimental RFC Candidate)  
+**Authors**: J.TIAN
+**Date**: July 2026
+
+---
+
+## Abstract
+
+UTXO6-DNS is a decentralized identity and payment protocol that leverages Verifiable Random Functions (VRFs) to deeply bind blockchain UTXO models with the IPv6 address space. It enables every IPv6 address to serve as a **cryptographically verifiable digital asset endpoint**, natively merging the network layer (IPv6) with the application layer (blockchain), and providing infrastructure for Web3 payments, DeFi compliance, and autonomous AI agents.
+
+---
+
+## 1. Introduction
+
+### 1.1 Background
+
+Current Internet naming (DNS) and value exchange systems (blockchains) remain siloed:
+- **DNS** provides human-readable names but carries no asset ownership information.
+- **Blockchain addresses** (e.g., `0x...`) carry assets but are hard to remember and lack compliance identity binding.
+
+These gaps cause:
+- Poor payment UX (copy-pasting long addresses)
+- Difficult compliance audits (no automatic counterparty identity resolution)
+- AI agents cannot natively execute on-chain operations via domain names
+
+### 1.2 Problem Statement
+
+We need a **native, verifiable** way to unify:
+- **Identity** (domain name)
+- **Asset ownership** (UTXO)
+- **Compliance credentials** (e.g., legal entity vLEI)
+
+into a single resolvable, programmable namespace.
+
+### 1.3 Our Contributions
+
+UTXO6-DNS introduces:
+1. **VRF-driven IPv6 address generation**: Deterministically generates 64‑bit IPv6 IIDs from UTXO proofs, cryptographically binding addresses to assets.
+2. **UTXO RR record (type 260)**: Extends DNS with a new record type for storing on‑chain addresses and VRF proofs.
+3. **Penetrating Regulatory Nodes (PRN)**: Built‑in compliance audit framework with real‑time AML/CFT screening.
+4. **vLEI integration**: Connects to GLEIF standards for verifiable legal entity identity.
+
+---
+
+## 2. Technical Background
+
+### 2.1 IPv6 and Interface Identifiers (IID)
+
+An IPv6 address has 128 bits, with the lower 64 bits forming the IID, typically derived from MAC addresses or random numbers. UTXO6‑DNS uses the IID field to carry VRF outputs, binding it to UTXOs.
+
+### 2.2 UTXO Model
+
+UTXO (Unspent Transaction Output) is the core ledger model in Bitcoin and others. Each UTXO is uniquely identified by `(txid, vout)` and associated with a public key (or address). Ownership transfers via digital signatures.
+
+### 2.3 Verifiable Random Functions (VRF)
+
+VRF is a cryptographic primitive that allows a private‑key holder to compute a deterministic random output from an input, along with a publicly verifiable proof, without revealing the private key. This protocol uses **ECVRF‑EDWARDS25519‑SHA512** (RFC 9381).
+
+### 2.4 DNS Protocol Extension
+
+DNS supports custom RR types via IANA‑assigned numbers. We have requested **type 260** for UTXO records and use EDNS0 extensions for additional verification metadata.
+
+---
+
+## 3. Protocol Design
+
+### 3.1 Overall Architecture
+
+Four layers (see [ARCHITECTURE](../ARCHITECTURE)):
+- **Application Layer**: CoCaDEX, wallets, AI aggregators
+- **Compliance & Audit Layer**: PRN nodes, vLEI verification
+- **DNS Resolution Layer**: UTXO RR lookup, VRF verification, caching
+- **Infrastructure Layer**: Multi‑chain nodes, legacy DNS resolvers
+
+### 3.2 VRF Address Generation Flow
+
+1. **Registration**: User provides on‑chain address and VRF public key, submits UTXO proof (e.g., most recent txid).
+2. **VRF computation**: Compute VRF hash on `(txid || vout || public_key)` using private key, obtaining output `O` and proof `P`.
+3. **IPv6 IID derivation**: Take first 64 bits of `O`, format as 16‑digit hex string → IID.
+4. **Binding publication**: Publish `(chain, address, P)` into DNS UTXO RR.
+
+### 3.3 UTXO RR Format
+_utxo.<domain>. TTL IN UTXO <chain> <address> <proof> 
+
+- `chain`: `bitcoin` / `ethereum` / `solana` etc.
+- `address`: On‑chain address (format varies)
+- `proof`: 64‑byte VRF proof (hex)
+
+**Example**:
+_utxo.alice.coca.utxo. 3600 IN UTXO ethereum 0xAbC... 0x1a2b...
+
+### 3.4 Compliance Audit (PRN)
+
+- **PRN nodes** deployed by regulators receive transaction pre‑screening requests.
+- **Audit data**: Amount, counterparty identity (via vLEI), purpose.
+- **Result**: `approved` / `rejected`, written to PRNAUDIT RR or on‑chain logs.
+
+### 3.5 vLEI Identity Binding
+
+- Domain owner publishes TXT record: `_lei.<domain>.  TXT  "did:vlei:..."`.
+- PRN queries this DID to verify legal entity validity and authorization signatures.
+
+---
+
+## 4. Implementation & Deployment
+
+### 4.1 Reference Implementations
+
+- **TypeScript SDK**: Resolver, VRF generator, PRN client.
+- **Python SDK**: Backend integration and analytics.
+- **CLI tools**: Operational query and debugging.
+
+### 4.2 DNS Deployment Options
+
+- **Decentralised**: Use ENS or Handshake as root zone to store UTXO RRs.
+- **Centralised**: Manage `.utxo` TLD by authority, but with DNSSEC + VRF double protection.
+
+### 4.3 PRN Node Deployment
+
+- Recommended internal private cloud within regulatory bodies, exposing secure REST APIs.
+- Synchronise with GLEIF vLEI registry in real time.
+
+---
+
+## 5. Security Analysis
+
+| Attack Vector | Mitigation |
+|---------------|------------|
+| DNS hijacking / cache poisoning | VRF proof binds to public key; DNSSEC protects RR integrity |
+| UTXO double‑spending | On‑chain consensus finality; resolver returns only confirmed UTXOs |
+| Identity forgery | vLEI provides globally verified legal entity; private‑key signing ensures authenticity |
+| PRN node compromise | Multi‑node consensus + on‑chain audit logs make tampering detectable |
+| VRF private key leak | Key rotation supported; old RRs naturally expire via TTL |
+| Privacy leakage | VRF outputs irreversible; PRN sees only necessary metadata (e.g., amount), not balances |
+
+---
+
+## 6. Performance & Scalability
+
+- **Resolution latency**: Standard DNS (UDP) < 100 ms + VRF verification < 200 ms.
+- **Caching**: TTL can be set to 1 hour to reduce load.
+- **Multi‑chain extensibility**: Easy to add new chains via `chain` field.
+- **Smart contract integration**: `.utxo` domains can map to contract addresses for DeFi protocols.
+
+---
+
+## 7. Future Work
+
+1. **Standardisation**: Submit formal draft to IETF for Experimental RFC.
+2. **Cross‑chain interoperability**: Use IBC or light clients for unified UTXO queries across chains.
+3. **AI‑native support**: Provide GPT function‑calling interfaces for AI to execute payments via domains.
+4. **Privacy enhancements**: Explore zero‑knowledge proofs for confidential transaction auditing.
+
+---
+
+## 8. Conclusion
+
+UTXO6‑DNS natively binds IPv6 address space with blockchain UTXO ownership via VRF, solving the three major pain points: hard‑to‑remember payment identities, difficult compliance audits, and lack of AI‑friendly on‑chain operation interfaces. The protocol is implemented in TypeScript/Python SDKs and being piloted within the CoCaDEX ecosystem. We believe this technology will become a key component of future Web3 infrastructure.
+
+---
+
+## 9. References
+
+1. [RFC 9381] Verifiable Random Functions (VRFs)  
+2. [RFC 1035] Domain Names – Implementation and Specification  
+3. [draft-guorong-utxo-dns] UTXO6‑DNS Protocol Specification (IETF)  
+4. GLEIF vLEI Technical Specifications (https://www.gleif.org/en/vlei/)  
+5. Nakamoto, S. Bitcoin: A Peer‑to‑Peer Electronic Cash System  
+6. Buterin, V. Ethereum White Paper  
+7. EDNS0 Extension (RFC 6891)
+
+---
+
+*This document is a technical white paper of the UTXO6‑DNS protocol. For detailed implementation, refer to the project source code and API documentation.*
