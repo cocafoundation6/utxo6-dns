@@ -11,6 +11,14 @@
 - [**W3C UW2ICG**](https://www.w3.org/community/uw2icg/) – Decentralised identity and verifiable credentials.
 - [**GLEIF vLEI**](https://www.gleif.org/en/vlei/) – Legal‑entity trust layer for compliance.
 
+
+BIS Unified Ledger Integration
+
+UTXO6-DNS supports programmable payments and embedded supervision as envisioned by the BIS Unified Ledger concept. The integration modules in `src/bis/` and `sdk/typescript/src/integrations/bis/` provide:
+
+- Atomic settlement between UTXO-based assets and central bank digital currencies (CBDCs).
+- Compliance rule translation for PRN nodes.
+- Sandbox deployment scripts for testing cross-institution payment flows.
 ## Overview
 
 UTXO6-DNS is an open-source protocol that anchors blockchain UTXO ownership to IPv6 Interface Identifiers (IIDs) via Verifiable Random Functions (VRF), enabling each IPv6 address to serve as a cryptographically verifiable binding for digital assets—transforming IPv6 addresses from mere network locators into programmable asset endpoints.
