@@ -19,6 +19,50 @@ UTXO6-DNS supports programmable payments and embedded supervision as envisioned 
 - Atomic settlement between UTXO-based assets and central bank digital currencies (CBDCs).
 - Compliance rule translation for PRN nodes.
 - Sandbox deployment scripts for testing cross-institution payment flows.
+
+- Directory Structure
+
+- integrations/jmbc-bis-unified-ledger/
+├── README.md
+├── src/
+│   ├── ledger_connector.rs
+│   ├── atomic_settlement.rs
+│   ├── naming_resolver.rs
+│   ├── compliance_adapter.rs
+│   ├── vlei_verifier.rs
+│   └── cross_chain_bridge.rs
+├── tests/
+│   └── integration_test.rs
+└── examples/
+    └── cross_border_payment.rs
+
+  # JMBC Integration for BIS Unified Ledger Infrastructure
+
+This module provides the **naming and compliance layer** for the BIS Unified Ledger, as envisioned in the UTXO-DNS white paper. It connects the JMBC (JMS Multi‑lateral Bridge for Central banks) ecosystem with the BIS Project Agorá unified ledger, enabling:
+
+- **Unified naming** – resolve `.utxo` domains to central bank digital currencies, tokenised deposits, and RWA assets.
+- **Atomic settlement** – trigger cross‑currency atomic settlements with VRF‑based cryptographic finality.
+- **Regulatory compliance** – integrate PRN (Penetrating Regulatory Node) for AML/CFT checks and immutable audit trails (PRNAUDIT RR).
+- **vLEI verification** – validate legal entity identities via GLEIF’s vLEI standard.
+- **Cross‑chain interoperability** – bridge CoCa mainnet, JMBC sidechain, and the BIS Unified Ledger.
+
+## Architecture
+
+The module mirrors the three‑layer design of the UTXO‑DNS resolution network:
+
+- **L1 (Global Root)** – anchors CoCa blockchain and vLEI root services.
+- **L2 (Regional)** – handles local compliance, KYC/AML, and settlement coordination.
+- **L3 (Edge)** – provides low‑latency resolution and payment proxying.
+
+All components are implemented in Rust and follow IETF standards (UTXO RR, EDNS0, VRF, etc.).
+
+## Usage
+
+Add this crate to your `Cargo.toml`:
+
+```toml
+[dependencies]
+jmbc-bis-integration = { path = "integrations/jmbc-bis-unified-ledger" }
 ## Overview
 
 UTXO6-DNS is an open-source protocol that anchors blockchain UTXO ownership to IPv6 Interface Identifiers (IIDs) via Verifiable Random Functions (VRF), enabling each IPv6 address to serve as a cryptographically verifiable binding for digital assets—transforming IPv6 addresses from mere network locators into programmable asset endpoints.
