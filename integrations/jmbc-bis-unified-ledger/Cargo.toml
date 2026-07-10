@@ -1,0 +1,72 @@
+##File: `integrations/jmbc-bis-unified-ledger/Cargo.toml`
+
+```toml
+[package]
+name = "jmbc-bis-integration"
+version = "0.1.0"
+edition = "2021"
+description = "JMBC integration with BIS Unified Ledger – naming, settlement, compliance, and cross-chain bridging"
+authors = ["J. Tian (uw2icg-core)"]
+license = "Apache-2.0"
+repository = "https://github.com/cocafoundation6/utxo6-dns"
+documentation = "https://github.com/cocafoundation6/utxo6-dns/tree/main/integrations/jmbc-bis-unified-ledger"
+readme = "README.md"
+keywords = ["bis", "unified-ledger", "jmbc", "utxo-dns", "cbdc", "atomic-settlement", "prn", "vlei"]
+categories = ["cryptography", "database", "network-programming"]
+
+[lib]
+name = "jmbc_bis_integration"
+path = "src/lib.rs"
+
+[[example]]
+name = "cross_border_payment"
+path = "examples/cross_border_payment.rs"
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json"] }
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+
+# Hex encoding
+hex = "0.4"
+
+# Error handling
+thiserror = "1.0"
+
+# Cryptography (for VRF and signatures)
+ed25519-dalek = "2.0"
+rand = "0.8"
+sha2 = "0.10"
+
+# URL handling
+url = "2.3"
+
+# Logging
+log = "0.4"
+env_logger = "0.10"
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+mockito = "1.0"
+
+[features]
+default = []
+# Enable mock connectors for testing
+mock = []
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.dev]
+opt-level = 0
+debug = true
+```
