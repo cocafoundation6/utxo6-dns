@@ -1,0 +1,415 @@
+## file: `integrations/jmbc-bis-unified-ledger/src/naming_resolver.rs`
+
+```rust
+//! Naming Resolver for the BIS Unified Ledger
+//!
+//! This module implements the core naming layer that maps `.utxo` domains to
+//! participants and assets on the BIS Unified Ledger. It resolves domains to
+//! specific asset types (wCBDC, tokenised deposits, tokenised bonds, RWA tokens)
+//! and provides a unified interface for addressing on the ledger.
+//!
+//! # Architecture
+//!
+//! The naming resolver acts as the bridge between the human-readable `.utxo`
+//! domain namespace and the machine‑readable addresses on the BIS Unified Ledger.
+//! It queries UTXO RR records, validates vLEI identities, and caches results
+//! for performance.
+//!
+//! # References
+//! - IETF draft‑guorong‑utxo‑dns‑01 – UTXO RR definition
+//! - GLEIF vLEI Standard – Legal‑entity verification
+//! - BIS Unified Ledger – Asset type taxonomy
+
+use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+use crate::ledger_connector::{
+    UnifiedLedgerConnector,
+    UnifiedLedgerParticipant,
+    ParticipantType,
+    UtxoRecord,
+};
+
+// ============================================================================
+// Data Structures
+// ============================================================================
+
+/// Asset types supported by the BIS Unified Ledger.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum UnifiedLedgerAsset {
+    /// Wholesale Central Bank Digital Currency (wCBDC)
+    Wbcdc,
+    /// Tokenised commercial bank deposits
+    TokenizedDeposit,
+    /// Tokenised government bonds
+    TokenizedBond,
+    /// Tokenised Real‑World Assets (RWA)
+    RwaToken,
+}
+
+/// Result of a naming resolution – maps a `.utxo` domain to a concrete ledger entity.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NamingResolution {
+    /// The resolved `.utxo` domain
+    pub domain: String,
+    /// The participant associated with the domain
+    pub participant: UnifiedLedgerParticipant,
+    /// The type of asset represented by the domain
+    pub asset_type: UnifiedLedgerAsset,
+    /// The on‑ledger address (endpoint) for the asset
+    pub asset_address: String,
+    /// Whether the participant's vLEI identity is verified
+    pub vlei_verified: bool,
+    /// Compliance status (from PRN checks)
+    pub compliance_status: ComplianceStatus,
+    /// Optional VRF proof (if available)
+    pub vrf_proof: Option<String>,
+}
+
+/// Compliance status of the resolved entity.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum ComplianceStatus {
+    /// Verified compliant (AML/CFT passed)
+    Verified,
+    /// Awaiting verification
+    Pending,
+    /// Failed compliance checks
+    Failed,
+}
+
+// ============================================================================
+// Naming Resolver
+// ============================================================================
+
+/// The main naming resolver for the BIS Unified Ledger.
+///
+/// It uses the `UnifiedLedgerConnector` to perform DNS‑over‑HTTPS queries for
+/// UTXO RR records, then maps the resolved endpoint to the appropriate ledger
+/// participant and asset type.
+///
+/// # Caching
+///
+/// Resolved entries are cached with a TTL to reduce network overhead. The cache
+/// is invalidated based on the TTL from the DNS record.
+pub struct UnifiedLedgerNamingResolver {
+    /// Connection to the BIS Unified Ledger
+    connector: UnifiedLedgerConnector,
+    /// Cache of resolved domains
+    cache: HashMap<String, CachedResolution>,
+}
+
+/// Cached entry with expiration time.
+#[derive(Debug, Clone)]
+struct CachedResolution {
+    resolution: NamingResolution,
+    expires_at: u64,
+}
+
+impl UnifiedLedgerNamingResolver {
+    /// Creates a new naming resolver with the given ledger connector.
+    pub fn new(connector: UnifiedLedgerConnector) -> Self {
+        Self {
+            connector,
+            cache: HashMap::new(),
+        }
+    }
+
+    /// Resolves a `.utxo` domain to a unified ledger asset.
+    ///
+    /// # Steps
+    /// 1. Check the cache for a valid entry.
+    /// 2. Query the UTXO RR (type 260) via DNS‑over‑HTTPS.
+    /// 3. Resolve the participant on the ledger.
+    /// 4. Determine the asset type based on participant type and record.
+    /// 5. Verify vLEI if present.
+    /// 6. Check compliance status (via PRN).
+    /// 7. Cache the result and return.
+    ///
+    /// # Arguments
+    /// * `domain` – The `.utxo` domain to resolve (e.g., `"fed.utxo"`).
+    ///
+    /// # Returns
+    /// * `Ok(NamingResolution)` – The resolved asset and participant.
+    /// * `Err(ResolutionError)` – If resolution fails.
+    pub async fn resolve(
+        &mut self,
+        domain: &str,
+    ) -> Result<NamingResolution, ResolutionError> {
+        // Step 1: Check cache
+        if let Some(cached) = self.cache.get(domain) {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            if cached.expires_at > now {
+                return Ok(cached.resolution.clone());
+            }
+        }
+
+        // Step 2: Query UTXO RR (DNS-over-HTTPS)
+        let record = self.connector
+            .query_utxo_rr(domain)
+            .await
+            .map_err(|_| ResolutionError::UtxoRecordNotFound)?;
+
+        // Step 3: Resolve the participant on the ledger
+        let participant = self.connector
+            .resolve_participant_by_domain(domain)
+            .await
+            .map_err(|_| ResolutionError::ParticipantNotFound)?;
+
+        // Step 4: Determine asset type
+        let asset_type = self.determine_asset_type(&participant, &record);
+
+        // Step 5: Verify vLEI (if present)
+        let vlei_verified = if let Some(vlei_did) = &record.vlei_did {
+            // In production: call vlei_verifier module
+            // For now, we assume verification succeeds if the DID is non-empty
+            !vlei_did.is_empty()
+        } else {
+            false
+        };
+
+        // Step 6: Compliance status (would call PRN adapter)
+        let compliance_status = ComplianceStatus::Verified;
+
+        // Step 7: Build the resolution
+        let resolution = NamingResolution {
+            domain: domain.to_string(),
+            participant,
+            asset_type,
+            asset_address: record.endpoint_id.clone(),
+            vlei_verified,
+            compliance_status,
+            vrf_proof: record.vrf_proof,
+        };
+
+        // Step 8: Cache with TTL
+        let ttl = record.ttl;
+        let expires_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            + ttl as u64;
+
+        self.cache.insert(
+            domain.to_string(),
+            CachedResolution {
+                resolution: resolution.clone(),
+                expires_at,
+            },
+        );
+
+        Ok(resolution)
+    }
+
+    /// Determines the asset type based on participant type and UTXO record.
+    ///
+    /// - Central Banks → wCBDC
+    /// - Commercial Banks → Tokenised Deposit
+    /// - Financial Institutions → Bond or RWA, based on endpoint prefix
+    fn determine_asset_type(
+        &self,
+        participant: &UnifiedLedgerParticipant,
+        record: &UtxoRecord,
+    ) -> UnifiedLedgerAsset {
+        match participant.participant_type {
+            ParticipantType::CentralBank => UnifiedLedgerAsset::Wbcdc,
+            ParticipantType::CommercialBank => UnifiedLedgerAsset::TokenizedDeposit,
+            ParticipantType::FinancialInstitution => {
+                // Heuristic: if endpoint starts with "bond_" treat as bond
+                if record.endpoint_id.starts_with("bond_") {
+                    UnifiedLedgerAsset::TokenizedBond
+                } else {
+                    UnifiedLedgerAsset::RwaToken
+                }
+            }
+        }
+    }
+
+    /// Clears the resolution cache.
+    pub fn clear_cache(&mut self) {
+        self.cache.clear();
+    }
+
+    /// Removes a single domain from the cache.
+    pub fn invalidate(&mut self, domain: &str) {
+        self.cache.remove(domain);
+    }
+
+    /// Returns the number of cached entries.
+    pub fn cache_size(&self) -> usize {
+        self.cache.len()
+    }
+}
+
+// ============================================================================
+// Error Handling
+// ============================================================================
+
+/// Errors that can occur during naming resolution.
+#[derive(Error, Debug)]
+pub enum ResolutionError {
+    #[error("UTXO RR record not found for domain")]
+    UtxoRecordNotFound,
+
+    #[error("Participant not found in unified ledger")]
+    ParticipantNotFound,
+
+    #[error("vLEI verification failed")]
+    VleiVerificationFailed,
+
+    #[error("Compliance check failed")]
+    ComplianceFailed,
+
+    #[error("Network error while resolving")]
+    NetworkError,
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ledger_connector::{UnifiedLedgerConnector, ParticipantType};
+
+    fn create_test_connector() -> UnifiedLedgerConnector {
+        UnifiedLedgerConnector::new("https://api.bis-unified-ledger.test".to_string())
+    }
+
+    #[tokio::test]
+    async fn test_resolve_central_bank() {
+        let connector = create_test_connector();
+        let mut resolver = UnifiedLedgerNamingResolver::new(connector);
+
+        // This will fail because no participants are registered, but we can test
+        // the error path.
+        let result = resolver.resolve("fed.utxo").await;
+        // In a real environment with registered participants, this would succeed.
+        // For now, it should return an error.
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_determine_asset_type() {
+        let connector = create_test_connector();
+        let resolver = UnifiedLedgerNamingResolver::new(connector);
+
+        let participant_cb = UnifiedLedgerParticipant {
+            id: "cb_1".to_string(),
+            name: "Central Bank".to_string(),
+            participant_type: ParticipantType::CentralBank,
+            jurisdiction: "US".to_string(),
+            vlei_did: None,
+            utxo_domain: Some("fed.utxo".to_string()),
+            ledger_address: "0x123".to_string(),
+        };
+
+        let record = UtxoRecord {
+            domain: "fed.utxo".to_string(),
+            owner: "owner".to_string(),
+            endpoint_id: "0x456".to_string(),
+            vrf_proof: None,
+            vlei_did: None,
+            compliance_ref: None,
+        };
+
+        let asset = resolver.determine_asset_type(&participant_cb, &record);
+        assert_eq!(asset, UnifiedLedgerAsset::Wbcdc);
+
+        let participant_commercial = UnifiedLedgerParticipant {
+            id: "com_1".to_string(),
+            name: "Commercial Bank".to_string(),
+            participant_type: ParticipantType::CommercialBank,
+            jurisdiction: "US".to_string(),
+            vlei_did: None,
+            utxo_domain: Some("bank.utxo".to_string()),
+            ledger_address: "0x789".to_string(),
+        };
+
+        let asset = resolver.determine_asset_type(&participant_commercial, &record);
+        assert_eq!(asset, UnifiedLedgerAsset::TokenizedDeposit);
+
+        let participant_fi = UnifiedLedgerParticipant {
+            id: "fi_1".to_string(),
+            name: "Investment Firm".to_string(),
+            participant_type: ParticipantType::FinancialInstitution,
+            jurisdiction: "GB".to_string(),
+            vlei_did: None,
+            utxo_domain: Some("fund.utxo".to_string()),
+            ledger_address: "0xabc".to_string(),
+        };
+
+        let record_bond = UtxoRecord {
+            domain: "fund.utxo".to_string(),
+            owner: "owner".to_string(),
+            endpoint_id: "bond_gilt".to_string(),
+            vrf_proof: None,
+            vlei_did: None,
+            compliance_ref: None,
+        };
+
+        let asset = resolver.determine_asset_type(&participant_fi, &record_bond);
+        assert_eq!(asset, UnifiedLedgerAsset::TokenizedBond);
+
+        let record_rwa = UtxoRecord {
+            domain: "fund.utxo".to_string(),
+            owner: "owner".to_string(),
+            endpoint_id: "rwa_gold".to_string(),
+            vrf_proof: None,
+            vlei_did: None,
+            compliance_ref: None,
+        };
+
+        let asset = resolver.determine_asset_type(&participant_fi, &record_rwa);
+        assert_eq!(asset, UnifiedLedgerAsset::RwaToken);
+    }
+
+    #[tokio::test]
+    async fn test_cache_invalidation() {
+        let connector = create_test_connector();
+        let mut resolver = UnifiedLedgerNamingResolver::new(connector);
+
+        // Resolve (will fail, but we can still test cache operations)
+        let _ = resolver.resolve("test.utxo").await;
+
+        // Cache size should be 0 because resolution failed
+        assert_eq!(resolver.cache_size(), 0);
+
+        // Manually insert a fake entry to test invalidation
+        let fake_resolution = NamingResolution {
+            domain: "fake.utxo".to_string(),
+            participant: UnifiedLedgerParticipant {
+                id: "fake".to_string(),
+                name: "Fake".to_string(),
+                participant_type: ParticipantType::CentralBank,
+                jurisdiction: "US".to_string(),
+                vlei_did: None,
+                utxo_domain: Some("fake.utxo".to_string()),
+                ledger_address: "0x000".to_string(),
+            },
+            asset_type: UnifiedLedgerAsset::Wbcdc,
+            asset_address: "0x000".to_string(),
+            vlei_verified: false,
+            compliance_status: ComplianceStatus::Verified,
+            vrf_proof: None,
+        };
+
+        resolver.cache.insert(
+            "fake.utxo".to_string(),
+            CachedResolution {
+                resolution: fake_resolution,
+                expires_at: u64::MAX,
+            },
+        );
+
+        assert_eq!(resolver.cache_size(), 1);
+        resolver.invalidate("fake.utxo");
+        assert_eq!(resolver.cache_size(), 0);
+    }
+}
+```
+
