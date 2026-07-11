@@ -1,14 +1,27 @@
 
-<img 
-  width="600" 
-  alt="UTXO6-DNS Brand Image" 
-  src="https://github.com/user-attachments/assets/594e740c-ede8-46e0-8c62-5d6ca9a6737c" 
-/>
+
+<p align="center">
+  <img 
+    width="300" 
+    alt="UTXO6-DNS Brand Image" 
+    src="https://github.com/user-attachments/assets/594e740c-ede8-46e0-8c62-5d6ca9a6737c" 
+  />
+</p>
 
 <p align="center">
   <b>⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live</b>
 </p>
 
+
+<p align="center">
+  <img width="600" alt="UTXO6-DNS" src="https://github.com/user-attachments/assets/594e740c-ede8-46e0-8c62-5d6ca9a6737c" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-green" />
+  <img src="https://img.shields.io/badge/Version-1.0.0-blue" />
+  <img src="https://img.shields.io/badge/Testnet-Global_Active-brightgreen" />
+</p>
 
 # utxo6-dns
 
