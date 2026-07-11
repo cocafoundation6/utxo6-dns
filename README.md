@@ -1,3 +1,15 @@
+
+<img 
+  width="600" 
+  alt="UTXO6-DNS Brand Image" 
+  src="https://github.com/user-attachments/assets/594e740c-ede8-46e0-8c62-5d6ca9a6737c" 
+/>
+
+<p align="center">
+  <b>⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live</b>
+</p>
+
+
 # utxo6-dns
 
 [![IETFStatus](https://img.shields.io/badge/IETF-Experimental-blue)](https://datatracker.ietf.org/doc/draft-guorong-utxo-dns/)
