@@ -1,0 +1,53 @@
+
+
+```typescript
+// packages/compute-market/src/utils/utxoResolver.ts
+// Author: J. Tian (uw2icg-core)
+
+/**
+ * UTXO-DNS Resolver
+ * Converts .utxo domain names to multi-chain endpoint identifiers
+ */
+export class UTXOResolver {
+  private cache: Map<string, any> = new Map();
+
+  async resolve(domain: string): Promise<{
+    chain: string;
+    address: string;
+    currency: string;
+    vleiDID?: string;
+  }> {
+    if (!domain.endsWith('.utxo')) {
+      throw new Error(`Invalid .utxo domain: ${domain}`);
+    }
+
+    const cached = this.cache.get(domain);
+    if (cached && Date.now() - cached.timestamp < 300000) {
+      return cached.data;
+    }
+
+    // Actual DNS query for UTXO RR (code 260)
+    // This is a simulation
+    const result = {
+      chain: this.resolveChain(domain),
+      address: this.generateAddress(domain),
+      currency: 'JMS',
+      vleiDID: `did:vlei:${domain.replace('.utxo', '')}`
+    };
+
+    this.cache.set(domain, { data: result, timestamp: Date.now() });
+    return result;
+  }
+
+  private resolveChain(domain: string): string {
+    if (domain.includes('eth')) return 'ethereum';
+    if (domain.includes('sol')) return 'solana';
+    if (domain.includes('btc')) return 'bitcoin';
+    return 'ethereum';
+  }
+
+  private generateAddress(domain: string): string {
+    // Generate deterministic address from domain name
+    return `0x${Buffer.from(domain).toString('hex').slice(0, 40)}`;
+  }
+}
