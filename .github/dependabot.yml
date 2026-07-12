@@ -1,0 +1,54 @@
+# .github/dependabot.yml
+# Dependabot configuration for automated dependency updates
+
+version: 2
+updates:
+
+  # 1. TypeScript/Node.js Dependency Update (packages/compute-market)
+  - package-ecosystem: "npm"
+    directory: "/packages/compute-market"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "automerge"
+    commit-message:
+      prefix: "fix(deps)"
+      prefix-development: "chore(deps-dev)"
+    ignore:
+      # Ignore major version updates (handle with caution)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # 2. Root directory dependencies (if any package.json）
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "fix(deps)"
+      prefix-development: "chore(deps-dev)"
+
+  # 3. GitHub Actions Workflow Updated
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "ci"
+      - "dependencies"
+    commit-message:
+      prefix: "chore(ci)"
