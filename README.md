@@ -128,3 +128,5 @@ This project is the official reference implementation of the **UTXO Web Wallet I
 - [W3C UW2I CG](https://www.w3.org/community/uw2i/)
 - [`w3c-cg/uw2i`](https://github.com/w3c-cg/uw2i)
 - [IETF Draft: UTXO6-DNS](https://www.ietf.org/ietf-ftp/internet-drafts/draft-guorong-utxo-dns-01.html)
+
+docs: add Guo Sheng (Zhongshiyuan) to contributors with UW2ICG affiliation
