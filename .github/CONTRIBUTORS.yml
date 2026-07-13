@@ -1,0 +1,12 @@
+# .github/CONTRIBUTORS.yml
+# List of project contributors
+
+contributors:
+  - name: "Guo Sheng"
+    username: "guo11907360"
+    email: "guo11907360@qq.com"
+    affiliation: "Zhongshiyuan (Hainan Special Economic Zone) Tourism Group Co., Ltd."
+    contributions:
+      - "co-founding"
+      - "strategic planning"
+    role: "contributor"
