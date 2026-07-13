@@ -1,9 +1,24 @@
-```markdown
 # Contributing to UTXO6-DNS
 
-👍🎉 First off, thank you for considering contributing to UTXO6-DNS! It's people like you that make this protocol better for everyone.
+First off, thank you for considering contributing to UTXO6-DNS! It's people like you that make this protocol better for everyone.
 
 The following is a set of guidelines for contributing to this repository. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+
+---
+
+## 🔗 UW2ICG Association
+
+**UTXO6-DNS** is the official reference implementation of the **[UTXO Web Wallet Interoperability (UW2I) Community Group](https://www.w3.org/community/uw2i/)** at W3C.
+
+- **Specifications & Standards:** [`w3c-cg/uw2i`](https://github.com/w3c-cg/uw2i)
+- **Mailing List:** `public-utxo-wallet@w3.org`
+- **IETF Draft:** [`draft-guorong-utxo-dns-01`](https://www.ietf.org/ietf-ftp/internet-drafts/draft-guorong-utxo-dns-01.html)
+
+To make substantive contributions to this repository, you **must** join the UW2I CG and agree to the **W3C Community Contributor License Agreement (CLA)**. Participation is free and open to all. See the [UW2I CG homepage](https://www.w3.org/community/uw2i/) for joining instructions.
+
+All contributions to this repository are subject to the **W3C CLA** and the **Apache License 2.0** (for code). By contributing, you agree to license your contributions under these terms.
+
+---
 
 ## Table of Contents
 
@@ -30,7 +45,9 @@ The following is a set of guidelines for contributing to this repository. These 
 
 ## Code of Conduct
 
-This project and everyone participating in it are governed by the [MIT License](LICENSE). By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+This project and everyone participating in it are governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+
+---
 
 ## Getting Started
 
@@ -47,21 +64,22 @@ Before you begin, ensure you have the following installed:
 
 To help you navigate, here's a quick overview of the repository layout:
 
-```
 utxo6-dns/
-├── ARCHITECTURE          # High-level architecture design
-├── CONTRIBUTING.md       # This file
-├── LICENSE               # MIT License
-├── README.md             # Project overview and quick start
-├── docs/                 # Whitepapers and protocol specifications
+├── ARCHITECTURE # High-level architecture design
+├── CONTRIBUTING.md # This file
+├── LICENSE # Apache License 2.0
+├── README.md # Project overview and quick start
+├── docs/ # Whitepapers and protocol specifications
 ├── sdk/
-│   ├── typescript/       # Main TypeScript SDK (Resolvers, VRF, PRN)
-│   ├── python/           # Python SDK
-│   ├── cli/              # Command-line interface tools
-│   └── examples/         # Sample usage scripts
-├── src/                  # Core protocol implementations (PoC)
-└── test/                 # Integration and unit tests
-```
+│ ├── typescript/ # Main TypeScript SDK (Resolvers, VRF, PRN)
+│ ├── python/ # Python SDK
+│ ├── cli/ # Command-line interface tools
+│ └── examples/ # Sample usage scripts
+├── src/ # Core protocol implementations (PoC)
+└── test/ # Integration and unit tests
+
+
+---
 
 ## How to Contribute
 
@@ -87,6 +105,8 @@ Feature requests are welcome! When suggesting an enhancement, please:
 ### Your First Code Contribution
 
 Unsure where to begin? Look for issues tagged with **`good-first-issue`** or **`help-wanted`**. These are typically small, self-contained tasks perfect for newcomers.
+
+---
 
 ## Development Workflow
 
@@ -115,11 +135,11 @@ We follow the **[Conventional Commits](https://www.conventionalcommits.org/)** s
 - `chore`: Maintenance tasks
 
 **Examples**:
-```
+
 feat(vrf): add ECVRF-EDWARDS25519-SHA512 implementation
 fix(resolver): handle empty DNS responses gracefully
 docs(readme): update installation instructions
-```
+
 
 ### Development Setup
 
@@ -128,79 +148,118 @@ docs(readme): update installation instructions
    ```bash
    git clone https://github.com/your-username/utxo6-dns.git
    cd utxo6-dns
-   ```
-3. **Set up the TypeScript SDK**:
-   ```bash
-   cd sdk/typescript
-   npm install
-   npm run build
-   ```
-4. **Set up the Python SDK** (optional):
-   ```bash
-   cd sdk/python
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
 
-## Coding Standards
+   Set up the TypeScript SDK:
 
-### TypeScript
+bash
+cd sdk/typescript
+npm install
+npm run build
+Set up the Python SDK (optional):
 
-- Use **ESLint** and **Prettier** for code formatting.
-- Run linting before committing:
-  ```bash
-  npm run lint
-  ```
-- Use strict TypeScript rules (`strict: true` in `tsconfig.json`).
-- Provide JSDoc comments for all public APIs.
+bash
+cd sdk/python
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+Coding Standards
+TypeScript
+Use ESLint and Prettier for code formatting.
 
-### Python
+Run linting before committing:
 
-- Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow  Follow **[PEP 8](https://peps.python.org/pep-0008/)**................................................................................................................................
-- Use  Use **Black** for automatic formatting. for automatic formatting.
-- Use  Use **Flake8** for linting. for linting.
-- Use type hints (PEP 484) wherever possible. Use type hints (PEP 484) wherever possible.
+bash
+npm run lint
+Use strict TypeScript rules (strict: true in tsconfig.json).
 
-## Testing
+Provide JSDoc comments for all public APIs.
 
-- **All new features must include unit tests.**
-- The test suite must pass locally before submitting a PR. The test suite must pass locally before submitting a PR.
-- TypeScript tests are run via  TypeScript tests are run via **Jest**::
-  ```bashbash
-  cd sdk/typescript
-  npm test
-  ```
-- Python tests are run via  Python tests are run via **pytest**::
-  ```bashbash
-  cd sdk/python
-  pytest
-  ```
-- Aim for a minimum test coverage of  Aim for a minimum test coverage of **80%**..
+Python
+Follow PEP 8.
 
-## Pull Request Process
+Use Black for automatic formatting.
 
-1. **Update your fork**: Ensure your branch is up-to-date with the : Ensure your branch is up-to-date with the `main` branch. branch.
-   ```bashbash
-   git remote add upstream https://github.com/cocafoundation6/utxo6-dns.git
-   git fetch upstream
-   git rebase upstream/main
-   ```
-2. **Push** your changes to your fork. your changes to your fork.
-3. **Open a Pull Request** (PR) against the  (PR) against the `main` branch of this repository. branch of this repository.
-4. In your PR description, include: In your PR description, include:
-   - A  A **clear description** of what the PR does. of what the PR does.
-   - A link to the  A link to the **related issue** (if any). (if any).
-   - Screenshots or logs showing that the changes work. Screenshots or logs showing that the changes work.
-5. **Wait for CI checks** to pass (GitHub Actions will run linting and tests). to pass (GitHub Actions will run linting and tests).
-6. **Request a review** from a maintainer. At least one approval is required for merging. from a maintainer. At least one approval is required for merging.
-7. The maintainer will merge your PR once all checks pass and the code is deemed ready. The maintainer will merge your PR once all checks pass and the code is deemed ready.
+Use Flake8 for linting.
 
-## License
+Use type hints (PEP 484) wherever possible.
 
-By contributing, you agree that your contributions will be licensed under the By contributing, you agree that your contributions will be licensed under the **MIT License** that covers this project. that covers this project.
+Testing
+All new features must include unit tests.
+The test suite must pass locally before submitting a PR.
 
-------
+TypeScript tests are run via Jest:
 
-Thank you again for your time and effort! If you have any questions, feel free to open a discussion or reach out to the maintainers.Thank you again for your time and effort! If you have any questions, feel free to open a discussion or reach out to the maintainers.
-```
+bash
+cd sdk/typescript
+npm test
+Python tests are run via pytest:
+
+bash
+cd sdk/python
+pytest
+Aim for a minimum test coverage of 80%.
+
+Pull Request Process
+Update your fork: Ensure your branch is up-to-date with the main branch.
+
+bash
+git remote add upstream https://github.com/cocafoundation6/utxo6-dns.git
+git fetch upstream
+git rebase upstream/main
+Push your changes to your fork.
+
+Open a Pull Request (PR) against the main branch of this repository.
+
+In your PR description, include:
+
+A clear description of what the PR does.
+
+A link to the related issue (if any).
+
+Screenshots or logs showing that the changes work.
+
+Wait for CI checks to pass (GitHub Actions will run linting and tests).
+
+Request a review from a maintainer. At least one approval is required for merging.
+
+The maintainer will merge your PR once all checks pass and the code is deemed ready.
+
+🔗 Contributor Attribution (UW2I CG Requirement)
+As required by the W3C UW2I Community Group:
+
+If you are not the sole contributor to a pull request, please identify all contributors in the PR comment.
+
+To add a contributor (other than yourself, which is automatic), mark them one per line as follows:
+
+text
++@github_username
+To remove a contributor (if added by mistake):
+
+text
+-@github_username
+If you are making a PR on behalf of someone else but you had no part in designing the feature, you can remove yourself using the above syntax.
+
+License
+By contributing, you agree that your contributions will be licensed under the Apache License 2.0 (for code) and subject to the W3C Community Contributor License Agreement (for specifications and standards work).
+
+See the LICENSE file for details.
+
+Thank you again for your time and effort! If you have any questions, feel free to open a discussion or reach out to the maintainers.
+
+Related Links:
+
+UW2I Community Group
+
+W3C Community CLA
+
+IETF Draft: UTXO6-DNS
+
+w3c-cg/uw2i Repository
+
+text
+
+---
+
+`docs: enhance CONTRIBUTING.md with UW2ICG association`
+
+
