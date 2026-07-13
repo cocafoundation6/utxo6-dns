@@ -1527,4 +1527,26 @@ All contributors to this project are recognized as participants in the UW2I CG c
 
 docs: add Guo Sheng (Zhongshiyuan) to contributors with UW2ICG affiliation
 
+---
 
+
+### Individuals
+
+- **Tian Guorong ** — Hong Kong Ronghua International Group Limited
+  - Co-author: Web3 Hong Kong Stablecoin Infrastructure White Paper
+  - IETF: `draft-guorong-utxo-dns-01`
+  - GitHub: [@guorongtian](https://github.com/guorongtian)
+
+- **Lei Zhibin ** — Hong Kong Ronghua International Group Limited
+  - Co-author: Web3 Hong Kong Stablecoin Infrastructure White Paper
+  - Email: [zblei@ust.hk](mailto:zblei@ust.hk)
+
+- **Huang Xinfeng** — Hong Kong Ronghua International Group Limited
+  - Co-author: Web3 Hong Kong Stablecoin Infrastructure White Paper
+  - Email: [1421798706@qq.com](mailto:1421798706@qq.com)
+ 
+  - docs: add Web3 Hong Kong Stablecoin Infrastructure white paper
+
+Co-authors: Tian Guorong, Lei Zhibin, Huang Xinfeng
+Institution: Hong Kong Ronghua International Group Limited
+Standards: IETF draft-guorong-utxo-dns-01 · W3C UW2ICG · BIS Project Agorá
