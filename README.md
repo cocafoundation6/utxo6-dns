@@ -114,3 +114,17 @@ See details below. CONTRIBUTING.md
 License
 
 MIT License
+
+## 🤝 Contributors
+
+- **Guo Sheng ** — Zhongshiyuan (Hainan Special Economic Zone) Tourism Group Co., Ltd.
+
+---
+
+## 🌐 UW2ICG Affiliation
+
+This project is the official reference implementation of the **UTXO Web Wallet Interoperability (UW2I) Community Group** at W3C.
+
+- [W3C UW2I CG](https://www.w3.org/community/uw2i/)
+- [`w3c-cg/uw2i`](https://github.com/w3c-cg/uw2i)
+- [IETF Draft: UTXO6-DNS](https://www.ietf.org/ietf-ftp/internet-drafts/draft-guorong-utxo-dns-01.html)
