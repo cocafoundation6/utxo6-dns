@@ -1544,9 +1544,31 @@ docs: add Guo Sheng (Zhongshiyuan) to contributors with UW2ICG affiliation
 - **Huang Xinfeng** — Hong Kong Ronghua International Group Limited
   - Co-author: Web3 Hong Kong Stablecoin Infrastructure White Paper
   - Email: [1421798706@qq.com](mailto:1421798706@qq.com)
- 
   - docs: add Web3 Hong Kong Stablecoin Infrastructure white paper
 
 Co-authors: Tian Guorong, Lei Zhibin, Huang Xinfeng
 Institution: Hong Kong Ronghua International Group Limited
 Standards: IETF draft-guorong-utxo-dns-01 · W3C UW2ICG · BIS Project Agorá
+
+
+- **Tian Guorong (田国荣)** — Hong Kong Ronghua International Group Limited
+  - Co-author: CoCa Merchant Acquiring System and API Design
+  - IETF: `draft-guorong-utxo-dns-01`
+  - W3C UW2ICG: Charter Supporter
+
+- **Lei Zhibin (雷志斌)** — Hong Kong Ronghua International Group Limited
+  - Co-author: CoCa Merchant Acquiring System and API Design
+  - Email: [zblei@ust.hk](mailto:zblei@ust.hk)
+  - W3C UW2ICG: Charter Supporter
+
+- **Huang Xinfeng (黃鑫鋒)** — Hong Kong Ronghua International Group Limited
+  - Co-author: CoCa Merchant Acquiring System and API Design
+  - Email: [1421798706@qq.com](mailto:1421798706@qq.com)
+  - W3C UW2ICG: Charter Supporter
+ 
+  - docs: add CoCa Merchant Acquiring System and API Design
+
+Co-authors: Tian Guorong, Lei Zhibin, Huang Xinfeng
+Institution: Hong Kong Ronghua International Group Limited
+Standards: IETF draft-guorong-utxo-dns-01 · W3C UW2ICG
+
