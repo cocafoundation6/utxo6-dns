@@ -33,6 +33,11 @@
  
 - **[W3C UW2I CG](https://www.w3.org/community/uw2i/)** – Decentralised identity and verifiable credentials.
 
+[![IETFStatus](https://img.shields.io/badge/IETF-Experimental-blue)](https://datatracker.ietf.org/doc/draft-guorong-utxo-dns/)
+[![W3C CG](https://img.shields.io/badge/W3C-UW2I_CG-blue)](https://www.w3.org/community/uw2i/)
+[![GitHub](https://img.shields.io/badge/GitHub-w3c--cg%2Fuw2i-181717)](https://github.com/w3c-cg/uw2i)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 
 ## Community & Related Links
 
@@ -142,3 +147,14 @@ fix: correct W3C UW2I CG links in README
 
 - Fix missing github.com in w3c-cg/uw2i link
 - Add hyperlink to W3C UW2I CG in Community section
+
+---
+
+docs: restore W3C UW2I CG badges and fix links
+
+- Restore IETF, W3C CG, GitHub, and License badges
+- Ensure all badges link to valid URLs:
+  - IETF: https://datatracker.ietf.org/doc/draft-guorong-utxo-dns/
+  - W3C CG: https://www.w3.org/community/uw2i/
+  - GitHub: https://github.com/w3c-cg/uw2i
+- Maintain project affiliation with UW2I Community Group
