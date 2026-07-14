@@ -165,3 +165,7 @@ docs: fix W3C UW2I CG links in README
 - Add missing github.com in first paragraph link
 - Convert W3C UW2ICG text to hyperlink with correct URL
 - Update name to UW2I CG for consistency
+
+## Contributing
+
+We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting issues or pull requests.
