@@ -25,12 +25,13 @@
 > 
 >Relevant web standards are currently being incubated within the W3C Community Group. For details, see: **[w3c-cg/uw2i](https://github.com/w3c-cg/uw2i)** repository.
 
+
 # Community & Related Links
 
 - **IETF DNSOP Working Group** – DNS protocol standardization.
-  
+
 - **ENS (Ethereum Name Service)** – Decentralised naming for Web3.
- 
+
 - **[W3C UW2I CG](https://www.w3.org/community/uw2i/)** – Decentralised identity and verifiable credentials.
 
 [![IETFStatus](https://img.shields.io/badge/IETF-Experimental-blue)](https://datatracker.ietf.org/doc/draft-guorong-utxo-dns/)
@@ -158,3 +159,9 @@ docs: restore W3C UW2I CG badges and fix links
   - W3C CG: https://www.w3.org/community/uw2i/
   - GitHub: https://github.com/w3c-cg/uw2i
 - Maintain project affiliation with UW2I Community Group
+
+docs: fix W3C UW2I CG links in README
+
+- Add missing github.com in first paragraph link
+- Convert W3C UW2ICG text to hyperlink with correct URL
+- Update name to UW2I CG for consistency
