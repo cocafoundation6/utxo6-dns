@@ -23,14 +23,16 @@
 
 > **📌 Agreement Ownership**
 > 
-> UTXO6-DNS Yes **UW2ICG（W3C UTXO Web Wallet Interoperability Community Group）** Official reference implementation.
-> 
-> Relevant web standards are currently being incubated within the W3C Community Group. For details, see:[`w3c-cg/uw2i`](https://github.com/w3c-cg/uw2i) Warehouse。
+>Relevant web standards are currently being incubated within the W3C Community Group. For details, see: **[w3c-cg/uw2i](https://github.com/w3c-cg/uw2i)** repository.
 
-[![IETFStatus](https://img.shields.io/badge/IETF-Experimental-blue)](https://datatracker.ietf.org/doc/draft-guorong-utxo-dns/)
-[![W3C CG](https://img.shields.io/badge/W3C-UW2I_CG-blue)](https://www.w3.org/community/uw2i/)
-[![GitHub](https://img.shields.io/badge/GitHub-w3c--cg%2Fuw2i-181717)](https://github.com/w3c-cg/uw2i)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+# Community & Related Links
+
+- **IETF DNSOP Working Group** – DNS protocol standardization.
+  
+- **ENS (Ethereum Name Service)** – Decentralised naming for Web3.
+ 
+- **[W3C UW2I CG](https://www.w3.org/community/uw2i/)** – Decentralised identity and verifiable credentials.
+
 
 ## Community & Related Links
 
@@ -131,4 +133,12 @@ This project is the official reference implementation of the **UTXO Web Wallet I
 - [IETF Draft: UTXO6-DNS](https://www.ietf.org/ietf-ftp/internet-drafts/draft-guorong-utxo-dns-01.html)
 
 docs: add Guo Sheng (Zhongshiyuan) to contributors with UW2ICG affiliation
+
+---
+
 fix: correct W3C UW2I CG badge link to uw2i
+
+fix: correct W3C UW2I CG links in README
+
+- Fix missing github.com in w3c-cg/uw2i link
+- Add hyperlink to W3C UW2I CG in Community section
