@@ -1,0 +1,130 @@
+
+
+### 2. `integrations/trade-profile/src/contracts/TradeProfile.sol`
+
+```solidity
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.19;
+
+/**
+ * @title TradeProfile
+ * @dev Smart contract for enterprise trade profile registration and verification
+ * @author Guo Sheng (Zhongshiyuan)
+ */
+contract TradeProfile {
+    struct Profile {
+        string domain;
+        string legalName;
+        string vlei;
+        string ipfsHash;
+        uint256 createdAt;
+        uint256 updatedAt;
+        bool isActive;
+        uint256 trustScore;
+    }
+
+    struct TradeCredential {
+        string credentialType;
+        string issuer;
+        string hash;
+        uint256 issuedAt;
+        uint256 expiresAt;
+        bool isValid;
+    }
+
+    mapping(string => Profile) public profiles;
+    mapping(string => TradeCredential[]) public credentials;
+    mapping(address => string) public ownerToDomain;
+
+    event ProfileRegistered(string indexed domain, address indexed owner);
+    event ProfileUpdated(string indexed domain);
+    event CredentialAdded(string indexed domain, string credentialType);
+
+    /**
+     * @dev Register a new trade profile
+     */
+    function registerProfile(
+        string memory domain,
+        string memory legalName,
+        string memory vlei,
+        string memory ipfsHash
+    ) external {
+        require(bytes(profiles[domain].domain).length == 0, "Profile already exists");
+        require(bytes(ownerToDomain[msg.sender]).length == 0, "Address already registered");
+
+        profiles[domain] = Profile({
+            domain: domain,
+            legalName: legalName,
+            vlei: vlei,
+            ipfsHash: ipfsHash,
+            createdAt: block.timestamp,
+            updatedAt: block.timestamp,
+            isActive: true,
+            trustScore: 50 // Initial score
+        });
+
+        ownerToDomain[msg.sender] = domain;
+
+        emit ProfileRegistered(domain, msg.sender);
+    }
+
+    /**
+     * @dev Update an existing profile
+     */
+    function updateProfile(string memory domain, string memory ipfsHash) external {
+        require(bytes(profiles[domain].domain).length > 0, "Profile not found");
+        require(keccak256(bytes(ownerToDomain[msg.sender])) == keccak256(bytes(domain)), "Not the owner");
+
+        profiles[domain].ipfsHash = ipfsHash;
+        profiles[domain].updatedAt = block.timestamp;
+
+        emit ProfileUpdated(domain);
+    }
+
+    /**
+     * @dev Add a trade credential
+     */
+    function addCredential(
+        string memory domain,
+        string memory credentialType,
+        string memory issuer,
+        string memory hash,
+        uint256 expiresAt
+    ) external {
+        require(bytes(profiles[domain].domain).length > 0, "Profile not found");
+        require(keccak256(bytes(ownerToDomain[msg.sender])) == keccak256(bytes(domain)), "Not the owner");
+
+        credentials[domain].push(TradeCredential({
+            credentialType: credentialType,
+            issuer: issuer,
+            hash: hash,
+            issuedAt: block.timestamp,
+            expiresAt: expiresAt,
+            isValid: true
+        }));
+
+        emit CredentialAdded(domain, credentialType);
+    }
+
+    /**
+     * @dev Get profile by domain
+     */
+    function getProfile(string memory domain) external view returns (Profile memory) {
+        return profiles[domain];
+    }
+
+    /**
+     * @dev Verify if profile is active and valid
+     */
+    function verifyProfile(string memory domain) external view returns (bool) {
+        Profile memory profile = profiles[domain];
+        return profile.isActive && bytes(profile.domain).length > 0;
+    }
+
+    /**
+     * @dev Get all credentials for a domain
+     */
+    function getCredentials(string memory domain) external view returns (TradeCredential[] memory) {
+        return credentials[domain];
+    }
+}
