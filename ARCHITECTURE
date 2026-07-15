@@ -9,7 +9,7 @@ UTXO6-DNS is a layered protocol stack, comprising from bottom to top the **Infra
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                          Application Layer                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  CoCaDEX     │  │  Wallet/Pay  │  │  AI Aggreg.  │  │  DApps       │  │
+│  │  CoCaDEX     │  │  Wallet/Pay  │  │  AI Aggreg.  │  │    DApps     │  │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
 ├─────────┼─────────────────┼─────────────────┼─────────────────┼──────────┤
 │         └───────——────────┴──────────——─────┴────────────——───┘          │
@@ -27,7 +27,7 @@ UTXO6-DNS is a layered protocol stack, comprising from bottom to top the **Infra
 │  │  • ECVRF-EDWARDS25519-SHA512 verification                          │  │
 │  │  • Deterministic IPv6 IID generation                               │  │
 │  │  • Multi‑chain address mapping (BTC/ETH/Solana/...)                │  │
-│  │            
+│  │                                                                    │  │ 
 │  └────────────────────────────────────────────────────────────────────┘  │
 ├──────────────────────────────────────────────────────────────────────────┤
 ├──────────────────────────────────────────────────────────────────────────┤
@@ -36,10 +36,8 @@ UTXO6-DNS is a layered protocol stack, comprising from bottom to top the **Infra
 │  │  Bitcoin   │  │  Ethereum  │  │  Solana    │  │  Legacy DNS│          │
 │  └────────────┘  └────────────┘  └────────────┘  └────────────┘          │
 │                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+└──────────────────────────────────────────────────────────────────────────┘
 
----
 
 ## 2. Core Components
 
