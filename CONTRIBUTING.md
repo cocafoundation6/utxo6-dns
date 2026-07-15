@@ -1572,3 +1572,16 @@ Co-authors: Tian Guorong, Lei Zhibin, Huang Xinfeng
 Institution: Hong Kong Ronghua International Group Limited
 Standards: IETF draft-guorong-utxo-dns-01 · W3C UW2ICG
 
+### 🤝 Project Leadership
+
+- **Project Lead & Founder**: Monica Zhu (莫尼卡·朱), CoCa Foundation
+- **W3C Community Group**: Chair, UTXO Web Wallet Interoperability CG
+- **IETF Draft**: Co-author, draft-guorong-utxo-dns-01
+- ocs: add Monica Zhu (CoCa Foundation) to contributors
+
+- Add CoCa Foundation as supporting organization
+- Add Monica Zhu as UW2ICG Chair & Founder
+- Link institutional support to project leadership
+- Lead Designer：Sean MacDonald 
+
+Author: Monica Zhu (CoCa Foundation)
