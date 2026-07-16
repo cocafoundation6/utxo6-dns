@@ -1,0 +1,31 @@
+
+### 2. `integrations/tee-wallet-pluggable/package.json`
+
+```json
+{
+  "name": "@utxo6-dns/tee-wallet-pluggable",
+  "version": "0.1.0",
+  "description": "Pluggable UTXO TEE multi-chain wallet SDK with DNS, TEE, multi-chain, IPv6, vLEI, storage",
+  "author": "Monica Zhu (CoCa Foundation / UW2ICG Chair)",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "ethers": "^6.0.0",
+    "bitcoinjs-lib": "^6.1.0",
+    "@solana/web3.js": "^1.87.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  }
+}
