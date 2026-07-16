@@ -169,3 +169,295 @@ docs: fix W3C UW2I CG links in README
 ## Contributing
 
 We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting issues or pull requests.
+
+# 🔌 Pluggable UTXO TEE Multi-Chain Wallet SDK
+
+## 完整 `README.md` 文件
+
+```markdown
+# 🔌 Pluggable UTXO TEE Multi-Chain Wallet SDK
+
+**Version:** 0.1.0
+**Author:** Monica Zhu (CoCa Foundation / UW2ICG Chair)
+**License:** Apache License 2.0
+**Status:** Experimental
+
+---
+
+## 📖 Overview
+
+A modular, pluggable wallet SDK integrating **UTXO-DNS resolution**, **TEE hardware trust**, **multi-chain transaction signing**, **vLEI compliance**, and **IPv6 visual verification** into a cohesive developer-friendly framework.
+
+This SDK is the reference implementation for the **W3C UW2ICG** wallet interoperability specifications and aligns with **IETF draft-guorong-utxo-dns-01**.
+
+---
+
+## 🎯 Core Philosophy
+
+> **"Code to interfaces, not implementations."**
+
+Every core capability is exposed as a **pluggable interface**, allowing developers to:
+- Swap DNS resolvers (UTXO-DNS, ENS, or custom)
+- Swap TEE backends (SGX, TrustZone, simulation)
+- Swap transaction builders (BTC, ETH, SOL, JMBC)
+- Swap storage backends (local, cloud, encrypted)
+- Swap compliance providers (vLEI, custom KYC)
+
+This design achieves **high cohesion** within modules and **low coupling** between them.
+
+---
+
+## 🧩 Architecture
+
+```
+<img width="794" height="824" alt="image" src="https://github.com/user-attachments/assets/8bd205ab-424a-4874-b547-92f1c81241c6" />
+
+---
+
+## ✨ Features
+
+| Module | Interface | Implementations | Description |
+| :--- | :--- | :--- | :--- |
+| **DNS Resolution** | `IDNSResolver` | `UTXODNSResolver`, `ENSSubdomainResolver` | Resolve `.utxo` / `.eth` to multi-chain address books |
+| **TEE Verification** | `ITEEVerifier` | `SGXTEEVerifier`, `TrustZoneTEEVerifier`, `SimulatedTEEVerifier` | Hardware-backed domain ownership assertions |
+| **Transaction Builder** | `IMultiChainTxBuilder` | `MultiChainTxBuilder` | Build & broadcast BTC/ETH/SOL/JMBC transactions |
+| **Visualization** | `IVisualUtils` | `IPv6Visualizer` | IPv6 color fingerprint for visual verification |
+| **Compliance** | `ICompliance` | `VLEIValidator` | vLEI legal entity credential verification |
+| **Storage** | `IStorage` | `LocalStorage` | Cache assertions and address books locally |
+
+---
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+npm install @utxo6-dns/tee-wallet-pluggable
+```
+
+### Basic Usage
+
+```typescript
+import {
+  WalletManager,
+  UTXODNSResolver,
+  SimulatedTEEVerifier,
+  MultiChainTxBuilder,
+  IPv6Visualizer,
+  VLEIValidator,
+  LocalStorage
+} from '@utxo6-dns/tee-wallet-pluggable';
+
+// 1. Initialize wallet with pluggable modules
+const wallet = new WalletManager({
+  dnsResolver: new UTXODNSResolver('https://dns.utxo.coca'),
+  teeVerifier: new SimulatedTEEVerifier(), // Swap for SGX in production
+  txBuilder: new MultiChainTxBuilder(),
+  visualizer: new IPv6Visualizer(),
+  compliance: new VLEIValidator(),
+  storage: new LocalStorage(),
+});
+
+await wallet.initialize();
+
+// 2. Resolve a domain to multi-chain addresses
+const addressBook = await wallet.resolve('merchant.utxo');
+console.log('BTC:', addressBook.addresses.btc);
+console.log('ETH:', addressBook.addresses.eth);
+
+// 3. Send a payment with TEE proof
+const result = await wallet.pay({
+  toDomain: 'bob.utxo',
+  amount: '0.01',
+  currency: 'BTC',
+  requireTEEProof: true,
+});
+
+console.log('Transaction sent:', result.txHash);
+```
+
+---
+
+## 🧩 Pluggable Module Guide
+
+### Replacing the TEE Backend
+
+```typescript
+// For Intel SGX (server/desktop)
+const teeVerifier = new SGXTEEVerifier('/path/to/enclave.signed.so');
+
+// For ARM TrustZone (mobile)
+const teeVerifier = new TrustZoneTEEVerifier('/path/to/trustzone');
+
+// For development/testing
+const teeVerifier = new SimulatedTEEVerifier();
+```
+
+### Replacing the DNS Resolver
+
+```typescript
+// Use UTXO-DNS gateway
+const dnsResolver = new UTXODNSResolver('https://dns.utxo.coca');
+
+// Use ENS subdomain delegation (EIP-3668)
+const dnsResolver = new ENSSubdomainResolver(
+  '0x1234567890123456789012345678901234567890',
+  'https://gateway.ens.domains'
+);
+
+// Custom resolver (implement IDNSResolver)
+class CustomResolver implements IDNSResolver {
+  async resolve(domain: string): Promise<AddressBook> {
+    // Your custom logic
+  }
+}
+```
+
+---
+
+## 📦 Module Structure
+
+```
+integrations/tee-wallet-pluggable/
+├── README.md
+├── package.json
+├── tsconfig.json
+├── src/
+│   ├── index.ts
+│   ├── types/
+│   │   └── index.ts
+│   ├── interfaces/
+│   │   ├── IDNSResolver.ts
+│   │   ├── ITEEVerifier.ts
+│   │   ├── IMultiChainTxBuilder.ts
+│   │   ├── IVisualUtils.ts
+│   │   ├── ICompliance.ts
+│   │   └── IStorage.ts
+│   ├── resolvers/
+│   │   ├── UTXODNSResolver.ts
+│   │   └── ENSSubdomainResolver.ts
+│   ├── tee/
+│   │   ├── SGXTEEVerifier.ts
+│   │   ├── TrustZoneTEEVerifier.ts
+│   │   └── SimulatedTEEVerifier.ts
+│   ├── tx/
+│   │   └── MultiChainTxBuilder.ts
+│   ├── visual/
+│   │   └── IPv6Visualizer.ts
+│   ├── compliance/
+│   │   └── VLEIValidator.ts
+│   ├── storage/
+│   │   └── LocalStorage.ts
+│   └── core/
+│       └── WalletManager.ts
+├── test/
+│   └── wallet.spec.ts
+└── examples/
+    └── basic-usage.ts
+```
+
+---
+
+## 🔐 Security & Compliance
+
+| Feature | Description |
+| :--- | :--- |
+| **TEE Attestation** | Remote attestation verifies the enclave's integrity before sensitive operations |
+| **UTXO Anchoring** | Domain ownership is anchored in UTXO state, providing deterministic verification |
+| **vLEI Integration** | GLEIF-based legal entity verification for enterprise compliance |
+| **Privacy Protection** | Address books and credentials processed inside TEE; only signed assertions are exposed |
+| **Audit Trail** | All binding operations are recorded on-chain for regulatory audit |
+
+---
+
+## 🛣️ Development Roadmap
+
+| Phase | Module | Deliverable |
+| :--- | :--- | :--- |
+| 1 | Core Types | `@utxo6-dns/core` |
+| 2 | DNS Resolver | `@utxo6-dns/dns-resolver` |
+| 3 | TEE Interface | `@utxo6-dns/tee-interface` |
+| 4 | SGX Implementation | `@utxo6-dns/tee-sgx` |
+| 5 | TrustZone Implementation | `@utxo6-dns/tee-tz` |
+| 6 | Multi-Chain TX | `@utxo6-dns/multichain-tx` |
+| 7 | Visual & Compliance | `@utxo6-dns/visual-utils`, `@utxo6-dns/compliance` |
+| 8 | Storage & Cache | `@utxo6-dns/storage` |
+| 9 | Full SDK | `@utxo6-dns/wallet-sdk` |
+
+---
+
+## 🔗 Related Standards
+
+| Standard | Status | Link |
+| :--- | :--- | :--- |
+| **IETF UTXO-DNS** | `draft-guorong-utxo-dns-01` | [IETF Datatracker](https://datatracker.ietf.org/doc/draft-guorong-utxo-dns/) |
+| **W3C UW2ICG** | Community Group | [w3c-cg/uw2i](https://github.com/w3c-cg/uw2i) |
+| **ENS EIP-3668** | Offchain Lookup | [EIP-3668](https://eips.ethereum.org/EIPS/eip-3668) |
+| **GLEIF vLEI** | Legal Entity Identifier | [GLEIF](https://www.gleif.org/) |
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
+
+All contributions are governed by the **W3C Community Contributor License Agreement (CLA)**.
+
+---
+
+## 📧 Contact
+
+| Role | Contact |
+| :--- | :--- |
+| **Project Lead** | Monica Zhu — [monica0615@qq.com](mailto:monica0615@qq.com) |
+| **W3C CG** | [UW2ICG](https://www.w3.org/community/uw2i/) |
+| **GitHub** | [cocafoundation6/utxo6-dns](https://github.com/cocafoundation6/utxo6-dns) |
+
+---
+
+## 📄 License
+
+Apache License 2.0
+
+---
+
+**Built with ❤️ by the UW2ICG community and CoCa Foundation.**
+```
+
+---
+
+## 🛠️ 上传步骤
+
+1. 进入 `cocafoundation6/utxo6-dns` 仓库
+2. 导航到 `integrations/tee-wallet-pluggable/` 目录
+3. 点击 **Add file → Create new file**
+4. 文件名输入：`README.md`
+5. **完整复制粘贴上述内容**
+6. 滚动到底部，填写提交信息：
+   ```
+   docs: add README for pluggable UTXO TEE multi-chain wallet SDK
+   ```
+7. 点击 **Commit new file**
+
+---
+
+## ✅ 提交信息
+
+```
+feat: add pluggable UTXO TEE multi-chain wallet SDK
+
+This PR introduces a modular, pluggable wallet SDK integrating:
+- Pluggable DNS resolution (UTXO-DNS, ENS subdomain)
+- Pluggable TEE backends (SGX, TrustZone, simulation)
+- Multi-chain transaction signing (BTC, ETH, SOL, JMBC)
+- IPv6 color fingerprint visualization
+- vLEI legal entity verification
+- Local caching with offline support
+
+All components are designed with dependency injection,
+allowing easy replacement of implementations.
+
+Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
+License: Apache-2.0
+Standards: IETF draft-guorong-utxo-dns-01 · W3C UW2ICG
+```
