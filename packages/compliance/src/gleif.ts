@@ -1,3 +1,6 @@
+feat: add UTXO model implementation on EVM (30 files)
+feat: add core types for UTXO on EVM implementation
+
 import { IVLEIValidator } from './validator';
 import { VLEIVerificationResult, UTXORef, TEEDomainAssertion } from '@utxodns/core';
 
