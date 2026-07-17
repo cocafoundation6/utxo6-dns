@@ -1,9 +1,14 @@
 {
   "name": "@utxodns/wallet-sdk",
   "version": "0.1.0",
-  "description": "Unified UTXO-DNS wallet SDK",
+  "description": "Unified UTXO-DNS wallet SDK with pluggable architecture",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts"
+  },
   "dependencies": {
     "@utxodns/core": "^0.1.0",
     "@utxodns/dns-resolver": "^0.1.0",
@@ -13,7 +18,61 @@
     "@utxodns/visual-utils": "^0.1.0",
     "@utxodns/storage": "^0.1.0"
   },
-  "scripts": {
-    "build": "tsc"
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/jest": "^29.5.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.0.0"
+  },
+  "peerDependencies": {
+    "ethers": "^6.0.0",
+    "bitcoinjs-lib": "^6.1.0"
+  },
+  "keywords": [
+    "utxo",
+    "dns",
+    "wallet",
+    "multichain",
+    "tee",
+    "vlei",
+    "blockchain",
+    "web3"
+  ],
+  "author": "Monica Zhu (CoCa Foundation / UW2ICG Chair)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cocafoundation6/utxo6-dns.git",
+    "directory": "packages/wallet-sdk"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
+
+feat: add UTXO-DNS pluggable multi-chain wallet SDK
+
+This PR introduces a modular, pluggable wallet SDK with:
+
+- Core type definitions (AddressBook, TEEDomainAssertion, UTXO, etc.)
+- Pluggable DNS resolution (UTXO-DNS gateway, ENS subdomain EIP-3668)
+- Pluggable TEE backends (Intel SGX, mock for development)
+- Multi-chain transaction building (Bitcoin UTXO model)
+- vLEI compliance module (GLEIF integration)
+- IPv6 color fingerprint visualization
+- Local storage with memory cache
+- Unified Wallet SDK entry point
+
+All components follow interface-based design for easy replacement.
+
+Design references:
+- Ethereum Foundation IPTF PoCs TEE demo
+- Aegis Solana TEE proxy key托管 design
+- Go multi-chain wallet PSBT transaction building
+- GLEIF vLEI credential standard
+
+Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
+License: Apache-2.0
+Standards: IETF draft-guorong-utxo-dns-01 · W3C UW2ICG
