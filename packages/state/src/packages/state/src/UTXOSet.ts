@@ -27,7 +27,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 批量添加 UTXO
+   * Batch add UTXOs
    */
   addUTXOs(utxos: UTXO[]): void {
     for (const utxo of utxos) {
@@ -36,7 +36,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 获取 UTXO
+   *Retrieve UTXO
    */
   getUTXO(txid: string, vout: number): UTXO | null {
     if (this.utxoSet[txid] && this.utxoSet[txid][vout]) {
@@ -46,7 +46,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 获取地址的所有 UTXO
+   * Retrieve all UTXOs for the address
    */
   getUTXOsByAddress(address: string): UTXO[] {
     const result: UTXO[] = [];
@@ -62,7 +62,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 查询 UTXO（支持过滤）
+   * Query UTXOs (with filtering support)
    */
   queryUTXOs(filter: UTXOFilter): UTXO[] {
     let result: UTXO[] = [];
@@ -88,7 +88,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 获取总余额
+   * Retrieve total balance
    */
   getBalance(address: string): bigint {
     const utxos = this.getUTXOsByAddress(address);
@@ -96,7 +96,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 选择 UTXO 以满足交易金额（类似比特币的 coin selection）
+   * Select UTXOs to meet the transaction amount (similar to Bitcoin's coin selection).
    */
   selectUTXOs(address: string, amount: bigint): { utxos: UTXO[]; total: bigint; change: bigint } {
     const available = this.getUTXOsByAddress(address);
@@ -120,7 +120,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 花费 UTXO（标记为已花费）
+   * Spend UTXO (mark as spent)
    */
   spendUTXO(txid: string, vout: number, spentTxid: string, spentVout: number): boolean {
     const utxo = this.getUTXO(txid, vout);
@@ -135,7 +135,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 批量花费 UTXO
+   * Batch spend UTXOs
    */
   spendUTXOs(inputs: TXInput[], spentTxid: string): boolean {
     let success = true;
@@ -146,8 +146,7 @@ export class UTXOSetManager {
     return success;
   }
 
-  /**
-   * 计算交易费用
+  /*** Calculate transaction fees
    */
   calculateFee(tx: UTXOTransaction, feeRate: bigint): bigint {
     const txSize = this.estimateTxSize(tx);
@@ -155,7 +154,7 @@ export class UTXOSetManager {
   }
 
   /**
-   * 估算交易大小（字节）
+   * Estimate transaction size (bytes)
    */
   private estimateTxSize(tx: UTXOTransaction): bigint {
     const inputSize = 148;
