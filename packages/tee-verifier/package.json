@@ -1,0 +1,13 @@
+{
+  "name": "@utxodns/tee-verifier",
+  "version": "0.1.0",
+  "description": "Pluggable TEE verification module for UTXO-DNS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@utxodns/core": "^0.1.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
