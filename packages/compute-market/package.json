@@ -1,4 +1,5 @@
-
+feat: add UTXO model implementation on EVM (30 files)
+feat: add core types for UTXO on EVM implementation
 ```json
 {
   "name": "@utxo6-dns/compute-market",
