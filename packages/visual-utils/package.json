@@ -1,0 +1,13 @@
+{
+  "name": "@utxodns/visual-utils",
+  "version": "0.1.0",
+  "description": "IPv6 color fingerprint visualization for UTXO-DNS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@utxodns/core": "^0.1.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
