@@ -1,0 +1,19 @@
+{
+  "name": "@utxodns/explorer",
+  "version": "0.1.0",
+  "description": "UTXO block explorer and monitoring system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@utxodns/core": "^0.1.0",
+    "@utxodns/state": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "author": "Monica Zhu (CoCa Foundation / UW2ICG Chair)",
+  "license": "Apache-2.0"
+}
