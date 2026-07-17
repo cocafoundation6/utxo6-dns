@@ -32,3 +32,19 @@ async function main() {
 }
 
 main().catch(console.error);
+
+feat: add UTXO explorer and monitoring module
+
+This PR introduces Phase 4: UTXO Explorer & Monitoring:
+
+- Block indexer for blockchain data storage
+- UTXO explorer with address lookup and search
+- Transaction tracker with confirmation monitoring
+- Address monitor with rule-based alerts
+- Statistics aggregation for network metrics
+
+Modules Added:
+- @utxodns/explorer: BlockIndexer, UTXOExplorer, TransactionTracker, AddressMonitor, Statistics
+
+Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
+License: Apache-2.0
