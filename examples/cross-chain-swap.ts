@@ -44,3 +44,19 @@ async function main() {
 }
 
 main().catch(console.error);
+
+feat: add HTLC atomic swap module for cross-chain trading bridge
+
+This PR introduces Phase 3: Cross-Chain Trading Bridge with HTLC:
+
+- HTLC contract management (create, activate, unlock, refund)
+- UTXO-based HTLC implementation
+- EVM-compatible HTLC implementation
+- Cross-chain swap coordinator (UTXO ↔ EVM)
+- Full examples for HTLC and cross-chain swaps
+
+Modules Added:
+- @utxodns/htlc: HTLC contract, UTXO/EVM implementations, swap manager
+
+Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
+License: Apache-2.0
