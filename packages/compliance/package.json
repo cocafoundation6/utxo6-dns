@@ -1,3 +1,7 @@
+feat: add UTXO model implementation on EVM (30 files)
+feat: add core types for UTXO on EVM implementation
+
+
 {
   "name": "@utxodns/compliance",
   "version": "0.1.0",
