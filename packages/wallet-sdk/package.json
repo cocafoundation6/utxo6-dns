@@ -1,0 +1,19 @@
+{
+  "name": "@utxodns/wallet-sdk",
+  "version": "0.1.0",
+  "description": "Unified UTXO-DNS wallet SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@utxodns/core": "^0.1.0",
+    "@utxodns/dns-resolver": "^0.1.0",
+    "@utxodns/tee-verifier": "^0.1.0",
+    "@utxodns/multichain-tx": "^0.1.0",
+    "@utxodns/compliance": "^0.1.0",
+    "@utxodns/visual-utils": "^0.1.0",
+    "@utxodns/storage": "^0.1.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
