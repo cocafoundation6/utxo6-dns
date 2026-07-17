@@ -461,3 +461,21 @@ Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
 License: Apache-2.0
 Standards: IETF draft-guorong-utxo-dns-01 · W3C UW2ICG
 ```
+
+## UTXODNS — Pluggable UTXO + TEE Multi-Chain Wallet Infrastructure
+https://img.shields.io/badge/license-MIT-blue.svg
+https://img.shields.io/badge/TypeScript-5.0+-3178C6
+https://img.shields.io/badge/PRs-welcome-brightgreen.svg
+
+## 👤 Author and Acknowledgments
+
+The core design of **UTXODNS** was led by **J.tian**, covering architectural design, module interface definition and the core verification process (TEE + UTXO binding).
+
+The development and refinement of this project have been made possible by the inspiration drawn from the following outstanding open-source projects and standards:
+
+- [Ethereum Foundation UTXO Demo](https://github.com/ethereum/utxo) — Proof of concept for UTXO on EVM
+- [EIP-3668 (CCIP-Read)](https://eips.ethereum.org/EIPS/eip-3668) — Off-chain Data Retrieval Standard
+- [Intel SGX DCAP](https://www.intel.com/content/www/us/en/developer/tools/software-guard-extensions/overview.html) — Remote Attestation for Trusted Execution Environments
+- [GLEIF vLEI](https://www.gleif.org/en/lei-solutions/verifiable-lei-vlei) — Verifiable Legal Entity Identification Standard
+- [Aegis Solana TEE Agent](https://github.com/AegisSolana) TEE Implementation in Trading Agents: Practical Applications
+- [Go Multichain Wallet](https://github.com/example) Multi-Chain Wallet Layered Architecture Reference
