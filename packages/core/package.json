@@ -1,0 +1,13 @@
+{
+  "name": "@utxodns/core",
+  "version": "0.1.0",
+  "description": "Core type definitions for UTXO-DNS wallet SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
