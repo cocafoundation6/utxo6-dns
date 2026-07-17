@@ -1,3 +1,6 @@
+feat: add UTXO model implementation on EVM (30 files)
+feat: add core types for UTXO on EVM implementation
+
 import { IMultiChainTxBuilder } from './builder';
 import { AddressBook, PaymentRequest, PaymentResponse, UnsignedTransaction } from '@utxodns/core';
 import * as bitcoin from 'bitcoinjs-lib';
