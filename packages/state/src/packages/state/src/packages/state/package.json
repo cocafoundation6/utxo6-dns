@@ -1,0 +1,18 @@
+{
+  "name": "@utxodns/state",
+  "version": "0.1.0",
+  "description": "UTXO state management for UTXO-DNS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@utxodns/core": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "author": "Monica Zhu (CoCa Foundation / UW2ICG Chair)",
+  "license": "Apache-2.0"
+}
