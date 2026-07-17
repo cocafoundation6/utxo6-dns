@@ -1,3 +1,6 @@
+feat: add UTXO model implementation on EVM (30 files)
+feat: add core types for UTXO on EVM implementation
+
 import { ITEEVerifier } from './verifier';
 import { TEEDomainAssertion, DomainUTXO, AddressBook } from '@utxodns/core';
 import { createHash, randomBytes } from 'crypto';
