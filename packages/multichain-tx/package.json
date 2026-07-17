@@ -1,0 +1,14 @@
+{
+  "name": "@utxodns/multichain-tx",
+  "version": "0.1.0",
+  "description": "Multi-chain transaction builder for UTXO-DNS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@utxodns/core": "^0.1.0",
+    "bitcoinjs-lib": "^6.1.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
