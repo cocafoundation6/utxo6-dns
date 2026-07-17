@@ -1,4 +1,5 @@
-
+feat: add UTXO model implementation on EVM (30 files)
+feat: add core types for UTXO on EVM implementation
 ```typescript
 // packages/compute-market/src/types/index.ts
 // Author: J. Tian (uw2icg-core)
