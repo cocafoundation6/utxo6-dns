@@ -1,0 +1,13 @@
+{
+  "name": "@utxodns/storage",
+  "version": "0.1.0",
+  "description": "Storage module for UTXO-DNS wallet SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@utxodns/core": "^0.1.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
