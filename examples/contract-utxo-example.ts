@@ -71,3 +71,19 @@ async function main() {
 }
 
 main().catch(console.error);
+
+feat: add EVM opcode extensions for UTXO operations
+
+This PR introduces Phase 5: EVM OpCode Extensions:
+
+- UTXO opcode definitions (balance, get, exists, create, spend, transfer, htlc, etc.)
+- OpCode interpreter for executing opcodes
+- OpCode engine with gas management
+- UTXO context builder for easy integration
+- Full examples demonstrating opcode usage
+
+Modules Added:
+- @utxodns/opcodes: UTXOOpCodes, OpCodeInterpreter, OpCodeEngine, UTXOContextBuilder
+
+Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
+License: Apache-2.0
