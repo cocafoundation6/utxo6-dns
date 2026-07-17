@@ -1,3 +1,5 @@
+feat: add UTXO model implementation on EVM (30 files)
+
 {
   "name": "@utxodns/wallet-sdk",
   "version": "0.1.0",
