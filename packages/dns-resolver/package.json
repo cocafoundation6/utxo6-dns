@@ -1,0 +1,14 @@
+{
+  "name": "@utxodns/dns-resolver",
+  "version": "0.1.0",
+  "description": "Pluggable DNS resolver for UTXO-DNS and ENS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@utxodns/core": "^0.1.0",
+    "ethers": "^6.0.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
