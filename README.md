@@ -25,6 +25,8 @@
 > 
 >Relevant web standards are currently being incubated within the W3C Community Group. For details, see: Relevant web standards are currently being incubated within the W3C Community Group. For details, see: **[w3c-cg/uw2i](https://github.com/w3c-cg/uw2i)** repository. repository.
 
+<img width="932" height="1118" alt="image" src="https://github.com/user-attachments/assets/b1da26f5-bfca-46b6-bf4c-c085f371df0d" />
+
 
 # Community & Related Links
 
