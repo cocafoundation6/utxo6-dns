@@ -20,9 +20,6 @@
 > 
 >Relevant web standards are currently being incubated within the W3C Community Group. For details, see: Relevant web standards are currently being incubated within the W3C Community Group. For details, see: **[w3c-cg/uw2i](https://github.com/w3c-cg/uw2i)** repository. repository.
 
-<img width="932" height="1118" alt="image" src="https://github.com/user-attachments/assets/b1da26f5-bfca-46b6-bf4c-c085f371df0d" />
-
-
 # Community & Related Links
 
 - **IETF DNSOP Working Group** – DNS protocol standardization. – DNS protocol standardization.
@@ -56,6 +53,8 @@ UTXO6-DNS supports programmable payments and embedded supervision as envisioned 
 For detailed documentation, see [integrations/jmbc-bis-unified-ledger/README.md](./integrations/jmbc-bis-unified-ledger/README.md).
 
 📌 Disclaimer: This document serves as a technical analysis reference to elucidate the design philosophy of UTXO6-DNS. The BIS Project Agorá is an official central bank-grade experimental initiative with authoritative real-network validation. The two differ in positioning: a central bank-led experiment versus an open-source community implementation.
+
+<img width="932" height="1118" alt="image" src="https://github.com/user-attachments/assets/b1da26f5-bfca-46b6-bf4c-c085f371df0d" />
 
 ## Usage
 
