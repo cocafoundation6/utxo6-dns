@@ -1,0 +1,40 @@
+
+```json
+{
+  "name": "@utxodns/net-settlement",
+  "version": "0.1.0",
+  "description": "JMBC-BIS daily net settlement with multilateral netting and audit trail",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "@utxodns/core": "^0.1.0",
+    "@utxodns/state": "^0.1.0",
+    "@utxodns/evm": "^0.1.0",
+    "@utxodns/compliance": "^0.1.0",
+    "@utxodns/bis-integration": "^0.1.0",
+    "@utxodns/iso20022": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "author": "Monica Zhu (CoCa Foundation / UW2ICG Chair)",
+  "license": "Apache-2.0",
+  "keywords": [
+    "netting",
+    "settlement",
+    "jmbc",
+    "bis",
+    "utxo",
+    "audit",
+    "prn"
+  ]
+}
