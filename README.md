@@ -1,38 +1,38 @@
 
 
-<p align="center">
-  <img 
-    width="300" 
+<<<p p align=="center">
+  <img img 
+    width=="300" 
     alt="UTXO6-DNS Brand Image" 
     src="https://github.com/user-attachments/assets/594e740c-ede8-46e0-8c62-5d6ca9a6737c" 
   />
-</p>
+</pp>
 
-<p align="center">
-  <b>⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live</b>
-</p>
+<p p p align===="center">
+  <bbbb>⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live</bbbb>
+</pp>
 
 
-<p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-green" />
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue" />
-  <img src="https://img.shields.io/badge/Testnet-Global_Active-brightgreen" />
-</p>
+<p p p align===="center">
+  <img img img src===="https://img.shields.io/badge/License-MIT-green" />
+  <img img img src===="https://img.shields.io/badge/Version-1.0.0-blue" />
+  <img img img src===="https://img.shields.io/badge/Testnet-Global_Active-brightgreen" />
+</pp>
 
 # utxo6-dns
 
 > **📌 Agreement Ownership**
 > 
->Relevant web standards are currently being incubated within the W3C Community Group. For details, see: **[w3c-cg/uw2i](https://github.com/w3c-cg/uw2i)** repository.
+>Relevant web standards are currently being incubated within the W3C Community Group. For details, see: Relevant web standards are currently being incubated within the W3C Community Group. For details, see: **[w3c-cg/uw2i](https://github.com/w3c-cg/uw2i)** repository. repository.
 
 
 # Community & Related Links
 
-- **IETF DNSOP Working Group** – DNS protocol standardization.
+- **IETF DNSOP Working Group** – DNS protocol standardization. – DNS protocol standardization.
 
-- **ENS (Ethereum Name Service)** – Decentralised naming for Web3.
+- **ENS (Ethereum Name Service)** – Decentralised naming for Web3. – Decentralised naming for Web3.
 
-- **[W3C UW2I CG](https://www.w3.org/community/uw2i/)** – Decentralised identity and verifiable credentials.
+- **[W3C UW2I CG](https://www.w3.org/community/uw2i/)** – Decentralised identity and verifiable credentials. – Decentralised identity and verifiable credentials.
 
 [![IETFStatus](https://img.shields.io/badge/IETF-Experimental-blue)](https://datatracker.ietf.org/doc/draft-guorong-utxo-dns/)
 [![W3C CG](https://img.shields.io/badge/W3C-UW2I_CG-blue)](https://www.w3.org/community/uw2i/)
@@ -42,8 +42,8 @@
 
 ## Community & Related Links
 
-- [**IETF DNSOP Working Group**](https://datatracker.ietf.org/group/dnsop/about/) – DNS protocol standardization.
-- [**ENS (Ethereum Name Service)**](https://ens.domains/) – Decentralised naming for Web3.
+- [**IETF DNSOP Working Group**](https://datatracker.ietf.org/group/dnsop/about/) – DNS protocol standardization. – DNS protocol standardization.
+- [**ENS (Ethereum Name Service)**](https://ens.domains/) – Decentralised naming for Web3. – Decentralised naming for Web3.
 - [**W3C UW2ICG**](https://www.w3.org/community/uw2icg/) – Decentralised identity and verifiable credentials.
 - [**GLEIF vLEI**](https://www.gleif.org/en/vlei/) – Legal‑entity trust layer for compliance.
 
@@ -57,6 +57,8 @@ UTXO6-DNS supports programmable payments and embedded supervision as envisioned 
 - **vLEI verification** via GLEIF for legal-entity trust.
 
 For detailed documentation, see [integrations/jmbc-bis-unified-ledger/README.md](./integrations/jmbc-bis-unified-ledger/README.md).
+
+📌 Disclaimer: This document serves as a technical analysis reference to elucidate the design philosophy of UTXO6-DNS. The BIS Project Agorá is an official central bank-grade experimental initiative with authoritative real-network validation. The two differ in positioning: a central bank-led experiment versus an open-source community implementation.
 
 ## Usage
 
