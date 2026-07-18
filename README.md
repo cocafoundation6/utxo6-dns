@@ -172,17 +172,6 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 # 🔌 Pluggable UTXO TEE Multi-Chain Wallet SDK
 
-## 完整 `README.md` 文件
-
-```markdown
-# 🔌 Pluggable UTXO TEE Multi-Chain Wallet SDK
-
-**Version:** 0.1.0
-**Author:** Monica Zhu (CoCa Foundation / UW2ICG Chair)
-**License:** Apache License 2.0
-**Status:** Experimental
-
----
 
 ## 📖 Overview
 
