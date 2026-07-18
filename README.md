@@ -51,10 +51,12 @@ UTXO6-DNS supports programmable payments and embedded supervision as envisioned 
 - **vLEI verification** via GLEIF for legal-entity trust.
 
 For detailed documentation, see [integrations/jmbc-bis-unified-ledger/README.md](./integrations/jmbc-bis-unified-ledger/README.md).
+—— To Developers and Regulators: This is not a new product, but a foundational infrastructure underpinning the orderly sovereignty of the digital civilization.
 
 📌 Disclaimer: This document serves as a technical analysis reference to elucidate the design philosophy of UTXO6-DNS. The BIS Project Agorá is an official central bank-grade experimental initiative with authoritative real-network validation. The two differ in positioning: a central bank-led experiment versus an open-source community implementation.
 
-<img width="932" height="1118" alt="image" src="https://github.com/user-attachments/assets/b1da26f5-bfca-46b6-bf4c-c085f371df0d" />
+<img width="907" height="1119" alt="image" src="https://github.com/user-attachments/assets/3034f49e-7cdb-4f27-825e-3a06c90c6fab" />
+
 
 ## Usage
 
