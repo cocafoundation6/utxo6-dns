@@ -408,31 +408,9 @@ All contributions are governed by the **W3C Community Contributor License Agreem
 
 Apache License 2.0
 
----
-
 **Built with ❤️ by the UW2ICG community and CoCa Foundation.**
 ```
 
----
-
-## 🛠️ 上传步骤
-
-1. 进入 `cocafoundation6/utxo6-dns` 仓库
-2. 导航到 `integrations/tee-wallet-pluggable/` 目录
-3. 点击 **Add file → Create new file**
-4. 文件名输入：`README.md`
-5. **完整复制粘贴上述内容**
-6. 滚动到底部，填写提交信息：
-   ```
-   docs: add README for pluggable UTXO TEE multi-chain wallet SDK
-   ```
-7. 点击 **Commit new file**
-
----
-
-## ✅ 提交信息
-
-```
 feat: add pluggable UTXO TEE multi-chain wallet SDK
 
 This PR introduces a modular, pluggable wallet SDK integrating:
