@@ -1,12 +1,7 @@
 
-
-<<<p p align=="center">
-  <img img 
-    width=="300" 
-    alt="UTXO6-DNS Brand Image" 
-    src="https://github.com/user-attachments/assets/594e740c-ede8-46e0-8c62-5d6ca9a6737c" 
-  />
-</pp>
+<p align="center">
+  <img width="300" alt="UTXO6-DNS Brand Image" src="https://github.com/user-attachments/assets/594e740c-ede8-46e0-8c62-5d6ca9a6737c" />
+</p>
 
 <p p p align===="center">
   <bbbb>⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live⚡ Decentralized UTXO-Based Domain Resolution Protocol · Global Performance Testnet Now Live</bbbb>
