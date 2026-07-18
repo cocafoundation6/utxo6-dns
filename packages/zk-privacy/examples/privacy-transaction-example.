@@ -1,0 +1,51 @@
+// Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
+// SPDX-License-Identifier: Apache-2.0
+
+import { PrivacyEngine } from '../src/core/PrivacyEngine';
+
+async function main() {
+  console.log('=== ZK Privacy Transaction Example ===\n');
+
+  const engine = new PrivacyEngine();
+
+  // 1. Create private transaction
+  console.log('1. Creating private transaction...');
+  const privateTx = await engine.createPrivateTransaction({
+    from: '0xalice',
+    to: '0xbob',
+    amount: BigInt(1000000)
+  });
+
+  console.log('   Transaction ID:', privateTx.id);
+  console.log('   Commitment:', privateTx.commitment.slice(0, 40) + '...');
+  console.log('   Nullifier:', privateTx.nullifier.slice(0, 40) + '...');
+  console.log('   Amount:', privateTx.amount.toString());
+
+  // 2. Verify transaction
+  console.log('\n2. Verifying private transaction...');
+  const isValid = engine.verifyPrivateTransaction(privateTx.id);
+  console.log('   Valid:', isValid);
+
+  // 3. Get private balance
+  console.log('\n3. Checking balances...');
+  const aliceBalance = engine.getPrivateBalance('0xalice');
+  const bobBalance = engine.getPrivateBalance('0xbob');
+  console.log(`   Alice balance: ${aliceBalance.toString()}`);
+  console.log(`   Bob balance: ${bobBalance.toString()}`);
+
+  // 4. Create a privacy pool
+  console.log('\n4. Creating privacy pool...');
+  const pool = engine.createPool('pool_001');
+  console.log('   Pool ID:', pool.id);
+  console.log('   Created at:', new Date(pool.createdAt).toISOString());
+
+  // 5. Add transaction to pool
+  console.log('\n5. Adding transaction to pool...');
+  engine.addToPool('pool_001', privateTx);
+  const poolStatus = engine.getPoolStatus('pool_001');
+  console.log('   Pool total locked:', poolStatus?.totalLocked.toString());
+
+  console.log('\n✅ Privacy transaction completed successfully!');
+}
+
+main().catch(console.error);
