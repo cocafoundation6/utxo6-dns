@@ -450,3 +450,5 @@ The development and refinement of this project have been made possible by the in
 - [GLEIF vLEI](https://www.gleif.org/en/lei-solutions/verifiable-lei-vlei) — Verifiable Legal Entity Identification Standard
 - [Aegis Solana TEE Agent](https://github.com/AegisSolana) TEE Implementation in Trading Agents: Practical Applications
 - [Go Multichain Wallet](https://github.com/example) Multi-Chain Wallet Layered Architecture Reference
+
+fix: correct image syntax in README.md
