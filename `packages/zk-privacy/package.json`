@@ -1,0 +1,37 @@
+
+```json
+{
+  "name": "@utxodns/zk-privacy",
+  "version": "0.1.0",
+  "description": "ZK-SNARKs privacy transaction module for UTXO-DNS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "@utxodns/core": "^0.1.0",
+    "@utxodns/state": "^0.1.0",
+    "@utxodns/evm": "^0.1.0",
+    "snarkjs": "^0.7.0",
+    "ffjavascript": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "author": "Monica Zhu (CoCa Foundation / UW2ICG Chair)",
+  "license": "Apache-2.0",
+  "keywords": [
+    "zk-snarks",
+    "privacy",
+    "utxo",
+    "zero-knowledge",
+    "cryptography"
+  ]
+}
