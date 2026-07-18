@@ -79,3 +79,34 @@ describe('ZK Privacy Module', () => {
     expect(proof.verificationKey).toBeDefined();
   });
 });
+feat: add ZK-SNARKs privacy transaction module
+
+This PR introduces a complete zero-knowledge privacy module
+for the UTXO-DNS ecosystem, enabling:
+
+- Pedersen commitments for hiding transaction amounts
+- ZK-SNARK proof generation and verification
+- Private UTXO creation and spending
+- Privacy pools for transaction batching
+- On-chain verification with Solidity contract
+- Selective disclosure for compliance
+
+Features:
+- Confidential amounts and addresses
+- Double-spend prevention via nullifiers
+- Merkle tree for commitment aggregation
+- Batch verification support
+- Privacy pool management
+
+Modules Added:
+- @utxodns/zk-privacy: Complete ZK privacy module
+
+Design References:
+- Zcash Sapling protocol
+- Tornado Cash privacy pools
+- Aztec Protocol UTXO model
+- IETF draft-guorong-utxo-dns-01
+
+Author: Monica Zhu (CoCa Foundation / UW2ICG Chair)
+License: Apache-2.0
+
