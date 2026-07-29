@@ -214,6 +214,14 @@ This design achieves **high cohesion** within modules and **low coupling** betwe
 | **Compliance** | `ICompliance` | `VLEIValidator` | vLEI legal entity credential verification |
 | **Storage** | `IStorage` | `LocalStorage` | Cache assertions and address books locally |
 
+
+[📺 观看 DNSOP Vienna 126 远程演示（现场录制）](./5cdd740d694dacc44eeb710c94501654.mp4)
+
+
+
+
+<img width="1589" height="689" alt="image" src="https://github.com/user-attachments/assets/6a5059a6-3a68-415b-ac32-82243f85e007" />
+
 ---
 
 ## 🚀 Quick Start
