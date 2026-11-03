@@ -183,7 +183,7 @@ sequenceDiagram
     end
     
     Validator-->>Agent: 13. Validation Passed (Boolean: True), Tx Finalized
-
+```
 
 ### 3.2 Opaque Binary Data Layer (Opaque RDATA)
 At the protocol level, we actively reject the burden of exacerbating public RRTYPE space congestion and transparent DNS-layer parsing. We adopt the RFC 3597 Private-use space (QTYPE 65400), strictly bound with the `_utxo` prefix (e.g., `_utxo.user.utxo6.com`). The RDATA is purely an opaque CBOR byte stream. The DNS network acts only as a transparent transmission and caching layer, never parsing its content.
@@ -197,6 +197,7 @@ When the underlying blockchain experiences a 51% attack, fork, or rollback, the 
 2.  **State Commitment Comparison**: TEE verifies whether the UTXO on the forked chain carries the same Taproot/MAST commitment root. If the commitment root on the forked chain is maliciously tampered with, the TEE directly rejects that chain's UTXO as the identity anchor.
 3.  **Local Monotonic Increment State (Anti-Replay)**: Even if the underlying chain rollback resurrects old transactions, the independent Nonce sequence maintained internally by the TEE will immediately intercept the transaction once it detects it has been consumed, ensuring the fork cannot "double-spend" the domain's addressing right.
 
+---
 
 ## Chapter 4: Consumer Domain Lifecycle State Machine
 
@@ -204,28 +205,7 @@ The lifecycle of a Consumer Domain is driven by four core primitives. Every stat
 
 **Figure 2: Consumer Domain Lifecycle State Machine**
 
-
-stateDiagram-v2
-    direction TB
-    [*] --> AVAILABLE: Initial State
-
-    AVAILABLE --> ACTIVE: REGISTER<br/>(Create Identity Anchor UTXO + Write CBOR record)
-    
-    ACTIVE --> ACTIVE: UPDATE<br/>(Sign to update CBOR endpoint mapping)
-    ACTIVE --> ACTIVE: TRANSFER<br/>(Transfer owner public key / Multi-sig)
-
-    ACTIVE --> GRACE_PERIOD: Timestamp > expires_at<br/>(Triggered by block height or TEE time)
-    
-    GRACE_PERIOD --> ACTIVE: Renewal<br/>(Pay renewal fee and update expires_at)
-    GRACE_PERIOD --> EXPIRED: Grace Period Timeout
-
-    EXPIRED --> AVAILABLE: RECLAIM<br/>(Trigger reclaim script)
-    
-    note right of AVAILABLE: TEE Verification:<br/>Domain hash does not exist<br/>and TEE proof is valid
-    note left of ACTIVE: TEE Verification Rules:<br/>1. UTXO Unspent (T12)<br/>2. Signature and Nonce Valid (T11)<br/>3. Endpoint Hash Match (T8/T9)
-    note right of GRACE_PERIOD: Grace Period (e.g., 30-90 days)<br/>Original owner can renew during this time
-    note right of EXPIRED: Domain becomes dead<br/>Anyone can initiate reclaim<br/>Reclaimer receives incentive<br/>Original Identity Anchor UTXO is destroyed
-
+<img width="1600" height="911" alt="State Machine" src="https://github.com/user-attachments/assets/83912e3a-5b14-41e7-a652-5bebe6e855a6" />
 
 *Caption: The lifecycle of a Consumer Domain is driven by four core primitives. Every state transition is strictly constrained by TEE cryptographic verifications (referencing test cases T8, T9, T11, T12), ensuring that domain ownership and endpoint mappings cannot be forged or hijacked.*
 
@@ -255,7 +235,7 @@ This protocol is not a theoretical deduction. The underlying engine has complete
 
 *Note: The T14 test cases strictly defend against Denial of Service (DoS) attacks where attackers construct oversized CBOR payloads to exhaust TEE memory or trigger DNS fragmentation amplification.*
 
-
+---
 
 ## Chapter 6: Standards & Compliance Moat
 
@@ -270,7 +250,7 @@ The Belgian entity (AISBL) serves as the sole submitting organization, mapping t
 *   **Hong Kong (HKBC)**: Docking with the stablecoin licensing sandbox to ensure liquidity compliance.
 *   **European Union**: Providing regulatory perspectives on MiCA and PSD2. We broadly welcome European local compliant institutions and standards entities to join us for deep collaboration.
 
-
+---
 
 ## Chapter 7: Investment Equity, Agency Implementation, and Regional Distribution Framework
 
@@ -280,7 +260,7 @@ The Belgian entity (AISBL) serves as the sole submitting organization, mapping t
 4.  **Third-Party Wallet Agency Recruitment (B2B2C)**: Recruiting "Implementing Members" from top wallets like imToken, charging an agency annual fee ($10/address) to rapidly establish early cash flow for the Foundation.
 5.  **Addressing Technology Service Fees**: Zhongshiyuan provides routing and addressing technology service fees domestically; PT COCA collects channel fees in Southeast Asian energy RWA settlements.
 
-
+---
 
 ## Conclusion
 
@@ -288,7 +268,7 @@ The Belgian entity (AISBL) serves as the sole submitting organization, mapping t
 
 Settlement can continue to flow through any compliant channel, but the control over the addressing layer must be returned to the merchant. This is the entire significance of building the `coca:` protocol.
 
-
+---
 
 ## Appendix
 
